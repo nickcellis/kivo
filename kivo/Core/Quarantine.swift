@@ -13,8 +13,58 @@ struct QuarantineEntry: Codable, Identifiable, Equatable {
     var originalURL: URL { URL(fileURLWithPath: originalPath) }
     var name: String { originalURL.lastPathComponent }
 
+    /// Days left before Kivo deletes this for good, or nil when nothing
+    /// expires. Shown on the row, because a countdown nobody can see is
+    /// just data loss on a timer.
+    func daysLeft(
+        retention: QuarantineRetention = .current,
+        asOf now: Date = Date()
+    ) -> Int? {
+
+        guard retention != .never else { return nil }
+
+        let elapsed = now.timeIntervalSince(date) / 86_400
+        return max(Int(ceil(Double(retention.rawValue) - elapsed)), 0)
+    }
+
     var shortPath: String {
         originalPath.replacingOccurrences(of: NSHomeDirectory(), with: "~")
+    }
+}
+
+/// How long Kivo holds something before deleting it for good.
+enum QuarantineRetention: Int, CaseIterable, Identifiable {
+
+    case never = 0
+    case week = 7
+    case month = 30
+    case quarter = 90
+
+    static let storageKey = "quarantineRetentionDays"
+
+    static var current: QuarantineRetention {
+        let stored = UserDefaults.standard.object(forKey: storageKey) as? Int
+        return stored.flatMap(QuarantineRetention.init(rawValue:)) ?? .month
+    }
+
+    var id: Int { rawValue }
+
+    var title: String {
+        switch self {
+        case .never: "Keep until I delete them"
+        case .week: "After 7 days"
+        case .month: "After 30 days"
+        case .quarter: "After 90 days"
+        }
+    }
+
+    var shortTitle: String {
+        switch self {
+        case .never: "Never"
+        case .week: "7 days"
+        case .month: "30 days"
+        case .quarter: "90 days"
+        }
     }
 }
 
@@ -128,6 +178,47 @@ final class Quarantine {
         }
 
         try write(entries().filter { $0.id != entry.id })
+    }
+
+    /// Items held longer than the retention setting.
+    ///
+    /// Quarantine is the one place in Kivo that only ever grows: four
+    /// different flows put things in and nothing takes them out unless
+    /// someone presses Delete. A cleaner that quietly hoards gigabytes is
+    /// working against its own purpose, so held items age out the way the
+    /// Trash does.
+    func expired(
+        retention: QuarantineRetention = .current,
+        asOf now: Date = Date()
+    ) -> [QuarantineEntry] {
+
+        guard retention != .never else { return [] }
+
+        let cutoff = now.addingTimeInterval(-Double(retention.rawValue) * 86_400)
+        return entries().filter { $0.date < cutoff }
+    }
+
+    /// Returns what it removed, so the app can say so rather than having
+    /// files disappear between launches with no explanation.
+    @discardableResult
+    func purgeExpired(
+        retention: QuarantineRetention = .current,
+        asOf now: Date = Date()
+    ) -> CleanResult {
+
+        var result = CleanResult()
+
+        for entry in expired(retention: retention, asOf: now) {
+            do {
+                try purge(entry)
+                result.removed += 1
+                result.bytes += entry.size
+            } catch {
+                result.failed += 1
+            }
+        }
+
+        return result
     }
 
     func purgeAll() throws {

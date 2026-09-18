@@ -66,6 +66,9 @@ private struct GeneralSettings: View {
     @StateObject private var store = ScanStore()
     @State private var stored: Int64 = 0
 
+    @AppStorage(QuarantineRetention.storageKey)
+    private var retention: Int = QuarantineRetention.month.rawValue
+
     /// Kivo's own footprint, shown because a tool that writes files should
     /// say how much it has written and offer to stop.
     private var storedLabel: String {
@@ -85,6 +88,12 @@ private struct GeneralSettings: View {
             }
             .pickerStyle(.inline)
             .horizontalRadioGroupLayout()
+
+            Picker("Delete held items:", selection: $retention) {
+                ForEach(QuarantineRetention.allCases) { option in
+                    Text(option.title).tag(option.rawValue)
+                }
+            }
 
             Divider()
                 .padding(.vertical, 4)

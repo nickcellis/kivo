@@ -102,6 +102,7 @@ struct Sidebar: View {
     @Binding var selectedSection: SidebarSection
     var status: KivoStatus = .good
     var volume: VolumeInfo?
+    var held: Int64 = 0
 
     var body: some View {
 
@@ -145,7 +146,7 @@ struct Sidebar: View {
             .environment(\.defaultMinListRowHeight, 32)
             .padding(.top, 6)
 
-            SidebarFooter(status: status, volume: volume)
+            SidebarFooter(status: status, volume: volume, held: held)
         }
         .background(Color.kivoSidebar)
     }
@@ -159,6 +160,7 @@ private struct SidebarFooter: View {
 
     let status: KivoStatus
     let volume: VolumeInfo?
+    var held: Int64 = 0
 
     var body: some View {
 
@@ -195,6 +197,16 @@ private struct SidebarFooter: View {
                     Text("\(volume.free.byteLabel) free")
                         .font(KivoFont.caption)
                         .foregroundStyle(Color.kivoDim)
+                }
+
+                // Quarantine is the one thing here that only grows, so its
+                // size belongs somewhere always visible rather than on the
+                // screen you have to remember to open.
+                if held > 0 {
+
+                    Text("\(held.byteLabel) set aside")
+                        .font(KivoFont.caption)
+                        .foregroundStyle(Color.kivoWarn)
                 }
             }
             .padding(.horizontal, 14)

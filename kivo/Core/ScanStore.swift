@@ -582,8 +582,24 @@ final class ScanStore: ObservableObject {
 
     // MARK: Quarantine
 
+    /// What aged out on this launch, so the UI can mention it once.
+    @Published private(set) var expiredOnLaunch: CleanResult?
+
     func loadQuarantine() {
+
+        // Ages items out before reading, so the list never shows something
+        // that is about to vanish without explanation.
+        let purged = quarantine.purgeExpired()
+
+        if purged.removed > 0 {
+            expiredOnLaunch = purged
+        }
+
         quarantined = quarantine.entries()
+    }
+
+    func dismissExpiryNotice() {
+        expiredOnLaunch = nil
     }
 
     var quarantinedBytes: Int64 {
@@ -711,6 +727,52 @@ final class ScanStore: ObservableObject {
 
             await self.finishCleaning(result)
             self.scan([.disk, .duplicates])
+        }
+    }
+
+    /// Large files are the user's own documents, so this removes exactly
+    /// what was ticked and nothing near it.
+    func removeLargeFiles(_ urls: Set<URL>) {
+
+        guard !isCleaning, !urls.isEmpty else { return }
+
+        isCleaning = true
+        cleanProgress = 0
+        lastCleanMode = .quarantine
+
+        let sizes = Dictionary(
+            uniqueKeysWithValues: largeFiles.map { ($0.url, $0.size) }
+        )
+
+        task?.cancel()
+
+        task = Task { [weak self] in
+
+            guard let self else { return }
+
+            var result = CleanResult()
+
+            for (index, url) in urls.enumerated() {
+
+                if Task.isCancelled { break }
+
+                await self.setCleanProgress(Double(index) / Double(urls.count))
+
+                do {
+                    try Quarantine.shared.store(
+                        url,
+                        label: url.lastPathComponent,
+                        size: sizes[url] ?? 0
+                    )
+                    result.removed += 1
+                    result.bytes += sizes[url] ?? 0
+                } catch {
+                    result.failed += 1
+                }
+            }
+
+            await self.finishCleaning(result)
+            self.scan([.disk, .largeFiles])
         }
     }
 

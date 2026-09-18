@@ -23,7 +23,8 @@ struct ContentView: View {
             Sidebar(
                 selectedSection: $selectedSection,
                 status: status,
-                volume: store.volume
+                volume: store.volume,
+                held: store.quarantinedBytes
             )
             // The automatic toggle always sorts ahead of our own items.
             .toolbar(removing: .sidebarToggle)
@@ -245,6 +246,7 @@ struct HeroCard: View {
     @State private var showClean = false
     @State private var showReview = false
     @State private var showDuplicates = false
+    @State private var showLargeFiles = false
 
     private var isScanning: Bool { store.phase.isScanning }
 
@@ -326,6 +328,16 @@ struct HeroCard: View {
                             }
                         }
 
+                        if config.offersLargeFiles {
+
+                            KivoSecondaryButton(
+                                title: "Review",
+                                icon: "checklist"
+                            ) {
+                                showLargeFiles = true
+                            }
+                        }
+
                         if config.offersClean {
 
                             KivoSecondaryButton(
@@ -358,6 +370,9 @@ struct HeroCard: View {
         }
         .sheet(isPresented: $showDuplicates) {
             DuplicateSheet(store: store)
+        }
+        .sheet(isPresented: $showLargeFiles) {
+            LargeFileSheet(store: store)
         }
     }
 

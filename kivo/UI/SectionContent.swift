@@ -60,6 +60,9 @@ struct SectionPageConfig {
     /// And for duplicates, which group their files rather than listing them.
     var offersDuplicates: Bool = false
 
+    /// And for large files, the last page that could only look.
+    var offersLargeFiles: Bool = false
+
     let scope: [SectionScope]
     let scopeState: String
 
@@ -689,6 +692,7 @@ extension SectionPageConfig {
                 primaryTitle: scanned ? "Scan Again" : "Scan Files",
                 primaryIcon: "doc.fill",
                 scanScopes: [.largeFiles],
+                offersLargeFiles: scanned && !store.largeFiles.isEmpty,
                 scope: [
                     .init(
                         icon: "doc",

@@ -290,6 +290,72 @@ struct QuarantineTests {
     }
 }
 
+// MARK: - Held items age out
+
+struct RetentionTests {
+
+    private func store(_ quarantine: Quarantine, age days: Int, in home: URL) throws {
+
+        let victim = home.appending(path: "item-\(days)")
+        try FileManager.default.createDirectory(at: victim, withIntermediateDirectories: true)
+        try quarantine.store(victim, label: "Test", size: 1024)
+    }
+
+    @Test("Nothing expires when retention is off")
+    func neverExpires() throws {
+
+        let test = try TestHome()
+        defer { test.cleanUp() }
+
+        let quarantine = Quarantine(root: test.root.appending(path: "q"))
+        try store(quarantine, age: 0, in: test.home)
+
+        let future = Date().addingTimeInterval(86_400 * 3650)
+
+        #expect(quarantine.expired(retention: .never, asOf: future).isEmpty)
+        #expect(quarantine.purgeExpired(retention: .never, asOf: future).removed == 0)
+        #expect(quarantine.entries().count == 1)
+    }
+
+    @Test("Items older than the setting are deleted, newer ones are kept")
+    func expiresPastTheLimit() throws {
+
+        let test = try TestHome()
+        defer { test.cleanUp() }
+
+        let quarantine = Quarantine(root: test.root.appending(path: "q"))
+        try store(quarantine, age: 0, in: test.home)
+
+        // The entry is stamped now, so the test moves the clock instead.
+        let inside = Date().addingTimeInterval(86_400 * 29)
+        let past = Date().addingTimeInterval(86_400 * 31)
+
+        #expect(quarantine.expired(retention: .month, asOf: inside).isEmpty)
+
+        let purged = quarantine.purgeExpired(retention: .month, asOf: past)
+        #expect(purged.removed == 1)
+        #expect(purged.bytes == 1024)
+        #expect(quarantine.entries().isEmpty)
+    }
+
+    @Test("The countdown shown on a row matches the setting")
+    func countdownIsHonest() throws {
+
+        let test = try TestHome()
+        defer { test.cleanUp() }
+
+        let quarantine = Quarantine(root: test.root.appending(path: "q"))
+        try store(quarantine, age: 0, in: test.home)
+
+        let entry = try #require(quarantine.entries().first)
+
+        #expect(entry.daysLeft(retention: .never) == nil)
+        #expect(entry.daysLeft(retention: .month, asOf: Date()) == 30)
+        #expect(entry.daysLeft(retention: .month, asOf: Date().addingTimeInterval(86_400 * 28)) == 2)
+        #expect(entry.daysLeft(retention: .month, asOf: Date().addingTimeInterval(86_400 * 40)) == 0)
+    }
+}
+
 // MARK: - The archive stays small and never crashes the app
 
 struct ArchiveTests {

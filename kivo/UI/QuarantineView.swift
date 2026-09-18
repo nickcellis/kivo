@@ -35,9 +35,26 @@ struct QuarantineView: View {
 
                     Text(store.quarantined.isEmpty
                         ? "Nothing here yet. Anything Kivo removes waits here until you decide."
-                        : "\(store.quarantined.count) item\(store.quarantined.count == 1 ? "" : "s") waiting on you.")
+                        : holdingLine)
                         .font(KivoFont.body)
                         .foregroundStyle(Color.kivoDim)
+
+                    if let expired = store.expiredOnLaunch, expired.removed > 0 {
+
+                        HStack(spacing: 7) {
+
+                            Text("\(expired.removed) item\(expired.removed == 1 ? "" : "s") reached \(QuarantineRetention.current.shortTitle) and were deleted, freeing \(expired.bytes.byteLabel).")
+                                .font(KivoFont.caption)
+                                .foregroundStyle(Color.kivoDim)
+
+                            Spacer(minLength: 8)
+
+                            KivoQuietButton(title: "Dismiss") {
+                                store.dismissExpiryNotice()
+                            }
+                        }
+                        .padding(.top, 2)
+                    }
 
                     if let error {
                         Text(error)
@@ -81,6 +98,18 @@ struct QuarantineView: View {
         } message: {
             Text("These files cannot be recovered afterwards. Put back anything you still want first.")
         }
+    }
+
+    private var holdingLine: String {
+
+        let count = store.quarantined.count
+        let items = "\(count) item\(count == 1 ? "" : "s") waiting on you"
+
+        guard QuarantineRetention.current != .never else {
+            return "\(items). Nothing is deleted automatically."
+        }
+
+        return "\(items). Anything left here is deleted after \(QuarantineRetention.current.shortTitle)."
     }
 
     private var header: some View {
@@ -170,6 +199,13 @@ struct QuarantineView: View {
             }
 
             Spacer(minLength: 8)
+
+            if let days = entry.daysLeft() {
+                Text(days == 0 ? "due" : "\(days)d left")
+                    .font(KivoFont.mono)
+                    .foregroundStyle(days <= 3 ? Color.kivoWarn : Color.kivoDim)
+                    .frame(width: 52, alignment: .trailing)
+            }
 
             KivoQuietButton(title: "Put Back") {
                 error = store.restore(entry)

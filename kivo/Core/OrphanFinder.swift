@@ -82,17 +82,34 @@ enum OrphanFinder {
             name = String(name[..<range.lowerBound])
         }
 
-        // Both spellings occur: "group.com.example" and "groups.com.apple".
-        for prefix in ["groups.", "group."] where name.hasPrefix(prefix) {
-            name = String(name.dropFirst(prefix.count))
-            break
-        }
+        // The decorations nest, and not in one fixed order: a group
+        // container is "TEAMID1234.group.com.example", the scripts folder
+        // beside it is spelled the same way, and other files carry only
+        // one of the two. Stripping each once in a fixed order left
+        // "group.com.microsoft.shared", whose vendor reads as "group.com"
+        // and so matches nothing installed. That put Office's shared
+        // container on the list with Office installed.
+        var stripping = true
 
-        // A ten character team prefix, as Apple issues them.
-        if let dot = name.firstIndex(of: "."),
-           name.distance(from: name.startIndex, to: dot) == 10,
-           name[..<dot].allSatisfy({ $0.isUppercase || $0.isNumber }) {
-            name = String(name[name.index(after: dot)...])
+        while stripping {
+
+            stripping = false
+
+            // Both spellings occur: "group.com.example" and
+            // "groups.com.apple".
+            for prefix in ["groups.", "group."] where name.hasPrefix(prefix) {
+                name = String(name.dropFirst(prefix.count))
+                stripping = true
+                break
+            }
+
+            // A ten character team prefix, as Apple issues them.
+            if let dot = name.firstIndex(of: "."),
+               name.distance(from: name.startIndex, to: dot) == 10,
+               name[..<dot].allSatisfy({ $0.isUppercase || $0.isNumber }) {
+                name = String(name[name.index(after: dot)...])
+                stripping = true
+            }
         }
 
         guard isIdentifierShaped(name) else { return nil }

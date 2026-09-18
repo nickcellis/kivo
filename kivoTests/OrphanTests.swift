@@ -46,6 +46,20 @@ struct OrphanTests {
         )
 
         #expect(OrphanFinder.identifier(from: "Google") == nil)
+
+        // A group container carries both decorations, in either order, and
+        // stripping each once left "group.com.microsoft.shared". Its
+        // vendor read as "group.com", which matches nothing installed, so
+        // Office's shared container was offered up with Office installed.
+        #expect(
+            OrphanFinder.identifier(from: "ABCDE12345.group.com.microsoft.shared")
+                == "com.microsoft.shared"
+        )
+        #expect(
+            OrphanFinder.identifier(from: "group.ABCDE12345.com.example.app")
+                == "com.example.app"
+        )
+        #expect(OrphanFinder.vendor(of: "com.microsoft.shared") == "com.microsoft")
     }
 
     @Test("Apple's own files are never candidates, however they are spelled")

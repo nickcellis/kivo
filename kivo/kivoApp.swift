@@ -42,6 +42,10 @@ struct kivoApp: App {
         // needs and leaves the tiles stranded across a wide, empty frame.
         // This is the size the layout is designed around.
         .defaultSize(width: 1000, height: 660)
+        // The title bar is empty now, so let the content run under it
+        // rather than leaving a grey strip that matches neither the black
+        // sidebar nor the near-black page.
+        .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentMinSize)
         .modelContainer(sharedModelContainer)
 

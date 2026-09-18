@@ -54,6 +54,11 @@ struct ContentView: View {
             .background(Color.kivoBackground)
         }
         .navigationSplitViewStyle(.balanced)
+        // Each column paints its own colour to the very top. Without this
+        // SwiftUI lays out 28pt below the title bar and macOS's grey window
+        // background shows through the gap, across both columns at once, so
+        // it can't match either of them.
+        .ignoresSafeArea(.container, edges: .top)
         // Empty rather than absent: with no title set at all, macOS falls
         // back to the app name and puts "kivo" back in the bar.
         .navigationTitle("")
@@ -191,6 +196,7 @@ struct PageView: View {
                 VStack(spacing: KivoMetrics.sectionSpacing) {
 
                     header
+                        .padding(.top, 14)
 
                     if !store.hasFullDisk {
 

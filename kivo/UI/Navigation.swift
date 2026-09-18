@@ -155,7 +155,8 @@ struct Sidebar: View {
             // shape rather than by scanning down a column of figures, and
             // it lost its header when the brand moved to the title bar.
             .environment(\.defaultMinListRowHeight, 32)
-            .padding(.top, 6)
+            // Clears the window buttons, which now float over the sidebar.
+            .padding(.top, 30)
 
             SidebarFooter(status: status, volume: volume, held: held)
         }

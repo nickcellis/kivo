@@ -69,8 +69,9 @@ Download the latest `Kivo.zip` from
 [Releases](https://github.com/NickCEllis/kivo/releases), unzip it, and drag
 Kivo to your Applications folder.
 
-The first launch is blocked, because the app is signed for development
-rather than with a distribution certificate. macOS will say it cannot verify
+The first launch is blocked, because the app carries no distribution
+certificate: it is signed ad-hoc, which means macOS can confirm nobody has
+tampered with it but cannot say who made it. macOS will say it cannot verify
 the developer. To open it anyway: **System Settings → Privacy & Security**,
 scroll to the message about Kivo, press **Open Anyway**, then confirm. On
 macOS 14 you can instead right-click the app and choose Open.

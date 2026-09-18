@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- The App Sandbox is OFF, and has to be for this app to do its job:
+	     a sandboxed process cannot read ~/Library/Caches, ~/.Trash or
+	     /Applications, so every figure Kivo shows would be zero. This is why
+	     CleanMyMac, AppCleaner, DaisyDisk and Mole for Mac are all
+	     distributed outside the Mac App Store. Turning it back on means
+	     giving up the entire feature set, not just some of it. -->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
+	<key>com.apple.security.files.user-selected.read-only</key>
+	<true/>
+</dict>
+</plist>

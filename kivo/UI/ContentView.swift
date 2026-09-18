@@ -27,7 +27,8 @@ struct ContentView: View {
                 volume: store.volume,
                 held: store.quarantinedBytes
             )
-            // The automatic toggle always sorts ahead of our own items.
+            // The window has no toolbar at all now, so the toggle it would
+            // otherwise install has nowhere to belong.
             .toolbar(removing: .sidebarToggle)
             // Outermost: the column width has to be the last thing applied
             // to the sidebar view, or a modifier wrapping it swallows the
@@ -56,18 +57,6 @@ struct ContentView: View {
         // Empty rather than absent: with no title set at all, macOS falls
         // back to the app name and puts "kivo" back in the bar.
         .navigationTitle("")
-        // Placed by AppKit, so it lands just right of the window buttons
-        // and stays level with them.
-        .toolbar {
-
-            ToolbarItem(placement: .navigation) {
-                BrandMark()
-            }
-
-            ToolbarItem(placement: .navigation) {
-                SidebarToggleButton()
-            }
-        }
         .tint(Color.kivoAccent)
         .frame(
             minWidth: 900,

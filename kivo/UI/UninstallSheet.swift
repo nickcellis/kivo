@@ -41,9 +41,6 @@ struct UninstallSheet: View {
             footer
         }
         .frame(width: 480)
-        // Opaque on purpose: a sheet floats over the window, so a
-        // material here would blur the window's own material and turn
-        // the panel grey.
         .background(Color.kivoSurface)
         .task {
             let built = await store.uninstallPlan(for: app)

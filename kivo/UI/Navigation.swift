@@ -148,10 +148,7 @@ struct Sidebar: View {
 
             SidebarFooter(status: status, volume: volume, held: held)
         }
-        // No background of our own: painting a solid colour here is what
-        // was switching off AppKit's sidebar vibrancy, which is the one
-        // material macOS gives you for free and the thing that makes a
-        // window look like it belongs on the system.
+        .background(Color.kivoSidebar)
     }
 }
 

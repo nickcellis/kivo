@@ -23,31 +23,10 @@ extension Color {
         Color(red: 0.055, green: 0.086, blue: 0.133)
     )
 
-    /// Card surface. Still defined, because a material needs something
-    /// behind it and a sheet presented over a sheet has nothing to blur.
+    /// Card surface — a touch lifted from the ground, never a material.
     static let kivoSurface = kivo(
         .white,
         Color(red: 0.086, green: 0.129, blue: 0.188)
-    )
-
-    /// Tint laid over a card's material. Without it the blur takes the
-    /// colour of whatever is behind the window, and the cards drift as the
-    /// wallpaper changes.
-    static let kivoGlassTint = kivo(
-        Color.white.opacity(0.55),
-        Color(red: 0.094, green: 0.129, blue: 0.188).opacity(0.55)
-    )
-
-    /// The lit edge along the top of a card. A flat border reads as a box;
-    /// one that catches light at the top reads as something with thickness.
-    static let kivoGlassHighlight = kivo(
-        Color.white.opacity(0.9),
-        Color.white.opacity(0.16)
-    )
-
-    static let kivoGlassEdge = kivo(
-        Color.black.opacity(0.10),
-        Color.black.opacity(0.32)
     )
 
     /// Sidebar ground: a shade below the content area so the split reads
@@ -145,68 +124,6 @@ enum KivoFont {
     static let mono = Font.system(size: 10.5, design: .monospaced)
     static let pill = Font.system(size: 9.5, weight: .bold, design: .monospaced)
     static let nav = Font.system(size: 11.5, weight: .medium)
-}
-
-// MARK: - Glass
-
-/// A card built the way macOS builds one: a material for the blur, a tint
-/// so it keeps its own colour, a lit top edge, and a shadow to sit it off
-/// the page.
-///
-/// The material goes over the window's own background, never over another
-/// material. Stacking blurs is what turns translucency into grey soup, and
-/// it is the reason this app was flat until now.
-struct KivoGlass: ViewModifier {
-
-    var radius: CGFloat = KivoMetrics.cardRadius
-    var accent: Color?
-    var isRaised: Bool = false
-
-    @Environment(\.colorScheme) private var scheme
-
-    private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: radius, style: .continuous)
-    }
-
-    func body(content: Content) -> some View {
-
-        content
-            .background {
-                shape
-                    .fill(.regularMaterial)
-                    .overlay(shape.fill(Color.kivoGlassTint))
-                    .shadow(
-                        color: Color.kivoGlassEdge.opacity(isRaised ? 1 : 0.7),
-                        radius: isRaised ? 14 : 8,
-                        y: isRaised ? 5 : 3
-                    )
-            }
-            .overlay {
-                shape.strokeBorder(
-                    LinearGradient(
-                        colors: accent.map { [$0.opacity(0.7), $0.opacity(0.25)] }
-                            ?? [
-                                Color.kivoGlassHighlight,
-                                Color.kivoGlassHighlight.opacity(scheme == .dark ? 0.25 : 0.35)
-                            ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 1
-                )
-            }
-    }
-}
-
-extension View {
-
-    func kivoGlass(
-        radius: CGFloat = KivoMetrics.cardRadius,
-        accent: Color? = nil,
-        isRaised: Bool = false
-    ) -> some View {
-        modifier(KivoGlass(radius: radius, accent: accent, isRaised: isRaised))
-    }
 }
 
 // MARK: - Helpers

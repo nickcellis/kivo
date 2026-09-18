@@ -91,6 +91,7 @@ enum KivoMetrics {
 
     static let navHeight: CGFloat = 46
     static let minTileWidth: CGFloat = 178
+    static let sidebarWidth: CGFloat = 272
 }
 
 // MARK: - Typography

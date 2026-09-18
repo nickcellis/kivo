@@ -25,7 +25,11 @@ struct ContentView: View {
                 status: status,
                 volume: store.volume
             )
-            .navigationSplitViewColumnWidth(min: 186, ideal: 198, max: 240)
+            .navigationSplitViewColumnWidth(
+                min: 244,
+                ideal: KivoMetrics.sidebarWidth,
+                max: 340
+            )
             // The automatic toggle always sorts ahead of our own items.
             .toolbar(removing: .sidebarToggle)
 

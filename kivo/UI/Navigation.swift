@@ -110,7 +110,8 @@ struct Sidebar: View {
                         ForEach(group.sections) { section in
 
                             Label(section.title, systemImage: section.icon)
-                                .font(KivoFont.body)
+                                .font(.system(size: 13))
+                                .padding(.vertical, 3)
                                 .tag(section)
                                 .accessibilityHint(section.subtitle)
                         }
@@ -123,12 +124,18 @@ struct Sidebar: View {
                             .font(KivoFont.label)
                             .tracking(0.8)
                             .foregroundStyle(Color.kivoDim)
+                            .padding(.top, 8)
+                            .padding(.bottom, 2)
                     }
                 }
             }
             .listStyle(.sidebar)
             .scrollContentBackground(.hidden)
-            .environment(\.defaultMinListRowHeight, 24)
+            // Roomier than the tables: this is the one list you read by
+            // shape rather than by scanning down a column of figures, and
+            // it lost its header when the brand moved to the title bar.
+            .environment(\.defaultMinListRowHeight, 32)
+            .padding(.top, 6)
 
             SidebarFooter(status: status, volume: volume)
         }

@@ -919,6 +919,10 @@ struct ActivityRow: View {
         /// Sorting the formatted string puts "9 KB" after "10 MB".
         var sortValue: Int64?
 
+        /// Green, amber or red at the start of the row, saying how safe
+        /// this one is to remove.
+        var safety: KivoSafety?
+
         /// Middle column, shown only on tables whose rows have one.
         var secondary: String?
         var secondaryTint: Color?
@@ -936,6 +940,10 @@ struct ActivityRow: View {
     var body: some View {
 
         HStack(spacing: 9) {
+
+            if let safety = model.safety {
+                KivoSafetyDot(safety: safety)
+            }
 
             if let fileURL = model.fileURL {
                 Image(nsImage: AppIcons.icon(for: fileURL))

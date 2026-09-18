@@ -241,7 +241,8 @@ extension SectionPageConfig {
                         title: file.name,
                         detail: shortPath(file.url),
                         value: file.size.byteLabel,
-                        sortValue: file.size
+                        sortValue: file.size,
+                        safety: .check
                     )
                 }.emptyFallback(
                     .init(
@@ -321,7 +322,8 @@ extension SectionPageConfig {
                         badge: category.tier.pill,
                         detail: "\(category.items) item\(category.items == 1 ? "" : "s") · \(category.detail)",
                         value: category.size.byteLabel,
-                        sortValue: category.size
+                        sortValue: category.size,
+                        safety: safety(for: category.tier)
                     )
                 }.emptyFallback(
                     .init(
@@ -409,7 +411,8 @@ extension SectionPageConfig {
                         badge: orphan.kind,
                         detail: orphan.shortPath,
                         value: orphan.size.byteLabel,
-                        sortValue: orphan.size
+                        sortValue: orphan.size,
+                        safety: .check
                     )
                 }.emptyFallback(
                     .init(
@@ -500,7 +503,8 @@ extension SectionPageConfig {
                         detail: set.files.first?.deletingLastPathComponent().path
                             .replacingOccurrences(of: NSHomeDirectory(), with: "~") ?? "",
                         value: set.reclaimable.byteLabel,
-                        sortValue: set.reclaimable
+                        sortValue: set.reclaimable,
+                        safety: .safe
                     )
                 }.emptyFallback(
                     .init(
@@ -897,6 +901,16 @@ extension SectionPageConfig {
         The contents of packages such as .app bundles and photo libraries \
         are skipped, so one library counts once instead of flooding the list.
         """
+
+    /// The tiers already describe how free Kivo is with a folder, so the
+    /// dot reads straight off them rather than inventing a second scale.
+    static func safety(for tier: CleanTier) -> KivoSafety {
+        switch tier {
+        case .safe: .safe
+        case .rebuildable: .check
+        case .manual: .keep
+        }
+    }
 
     static func tierTint(_ tier: CleanTier) -> Color {
         switch tier {

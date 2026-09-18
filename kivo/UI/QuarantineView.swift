@@ -179,6 +179,10 @@ struct QuarantineView: View {
 
         HStack(spacing: 9) {
 
+            if let days = entry.daysLeft() {
+                KivoSafetyDot(safety: days <= 3 ? .keep : (days <= 7 ? .check : .safe))
+            }
+
             VStack(alignment: .leading, spacing: 2) {
 
                 HStack(spacing: 6) {

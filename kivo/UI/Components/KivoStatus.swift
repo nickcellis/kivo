@@ -45,6 +45,58 @@ enum KivoStatus {
     }
 }
 
+// MARK: - Safety
+
+/// What a row's dot means: how safe this thing is to remove.
+///
+/// Deliberately not a measure of size or age. A traffic light that codes
+/// "big" tells you what the number beside it already says; one that codes
+/// risk tells you the thing the list can't.
+enum KivoSafety {
+
+    /// Rebuilds itself. Clearing it costs nothing but a slower first run.
+    case safe
+
+    /// Removable, but it costs something: a re-download, a rebuild, or
+    /// your own judgement about a file you made.
+    case check
+
+    /// Kivo won't remove it, or you shouldn't: in use, or not ours.
+    case keep
+
+    var tint: Color {
+        switch self {
+        case .safe: .kivoGood
+        case .check: .kivoWarn
+        case .keep: .kivoRisk
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .safe: "Safe to remove"
+        case .check: "Check before removing"
+        case .keep: "Leave this alone"
+        }
+    }
+}
+
+/// The dot itself. Small, and only drawn where removal is the question the
+/// row is about, so it stays a signal rather than a decoration.
+struct KivoSafetyDot: View {
+
+    let safety: KivoSafety
+
+    var body: some View {
+
+        Circle()
+            .fill(safety.tint)
+            .frame(width: 6, height: 6)
+            .help(safety.label)
+            .accessibilityLabel(safety.label)
+    }
+}
+
 // MARK: - Card label
 
 /// Uppercase monospace label with a status dot, the thing that heads every

@@ -17,7 +17,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0106C1D3305D2708007CA0B1 /* kivo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = kivo.app; path = Kivo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0106C1D3305D2708007CA0B1 /* Kivo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kivo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0106C1E3305D2709007CA0B1 /* kivoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kivoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -64,7 +64,7 @@
 		0106C1D4305D2708007CA0B1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				0106C1D3305D2708007CA0B1 /* kivo.app */,
+				0106C1D3305D2708007CA0B1 /* Kivo.app */,
 				0106C1E3305D2709007CA0B1 /* kivoTests.xctest */,
 			);
 			name = Products;
@@ -92,7 +92,7 @@
 			packageProductDependencies = (
 			);
 			productName = kivo;
-			productReference = 0106C1D3305D2708007CA0B1 /* kivo.app */;
+			productReference = 0106C1D3305D2708007CA0B1 /* Kivo.app */;
 			productType = "com.apple.product-type.application";
 		};
 		0106C1E2305D2709007CA0B1 /* kivoTests */ = {
@@ -332,6 +332,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Kivo;
 				INFOPLIST_KEY_CFBundleName = Kivo;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -361,6 +362,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Kivo;
 				INFOPLIST_KEY_CFBundleName = Kivo;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

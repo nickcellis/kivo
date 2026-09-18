@@ -49,7 +49,21 @@ struct ContentView: View {
             .transition(.opacity)
             .animation(.easeInOut(duration: 0.14), value: selectedSection)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.kivoBackground)
+            // A gradient rather than a flat fill: a material blurs what is
+            // behind it, so a single colour leaves every card looking
+            // identical wherever it sits on the page.
+            .background {
+                LinearGradient(
+                    colors: [
+                        Color.kivoBackground,
+                        Color.kivoAccent.opacity(0.05),
+                        Color.kivoBackground
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            }
         }
         .navigationSplitViewStyle(.balanced)
         // Empty rather than absent: with no title set at all, macOS falls

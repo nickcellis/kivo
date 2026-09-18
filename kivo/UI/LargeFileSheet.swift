@@ -41,6 +41,9 @@ struct LargeFileSheet: View {
             footer
         }
         .frame(width: 560)
+        // Opaque on purpose: a sheet floats over the window, so a
+        // material here would blur the window's own material and turn
+        // the panel grey.
         .background(Color.kivoSurface)
         .confirmationDialog(
             "Set aside \(selectedBytes.byteLabel)?",

@@ -109,6 +109,9 @@ struct CleanSheet: View {
             footer
         }
         .frame(width: 470)
+        // Opaque on purpose: a sheet floats over the window, so a
+        // material here would blur the window's own material and turn
+        // the panel grey.
         .background(Color.kivoSurface)
         .onDisappear { preview.cancelAll() }
         .confirmationDialog(

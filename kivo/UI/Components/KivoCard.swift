@@ -36,8 +36,11 @@ struct KivoCard<Content: View>: View {
                 maxHeight: fillsHeight ? .infinity : nil,
                 alignment: .topLeading
             )
-            .background(shape.fill(Color.kivoSurface))
-            .overlay(shape.strokeBorder(border, lineWidth: 1))
+            .kivoGlass(
+                accent: isRaised ? .kivoAccent : accent,
+                isRaised: isRaised
+            )
             .animation(.easeOut(duration: 0.13), value: isRaised)
     }
 }
+

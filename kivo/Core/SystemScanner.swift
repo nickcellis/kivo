@@ -398,6 +398,50 @@ enum SystemScanner {
 
     // MARK: Applications
 
+    /// Every app in a folder, including the ones a level down.
+    ///
+    /// /Applications is not flat. WhatsApp ships inside
+    /// "WhatsApp.localized", Utilities is a folder, and several installers
+    /// make one of their own. A listing that stops at the top level calls
+    /// those apps uninstalled, which is wrong on the Applications page and
+    /// dangerous in the leftover finder, where "not installed" is what
+    /// offers somebody's files up for removal. One level down is as far as
+    /// this goes, and it never enters a bundle: an app inside another app
+    /// belongs to that app, not to the user.
+    static func appBundles(in root: URL) -> [URL] {
+
+        guard let contents = try? fm.contentsOfDirectory(
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else { return [] }
+
+        var bundles: [URL] = []
+
+        for entry in contents {
+
+            if entry.pathExtension == "app" {
+                bundles.append(entry)
+                continue
+            }
+
+            let isFolder = (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?
+                .isDirectory ?? false
+
+            guard isFolder else { continue }
+
+            let children = (try? fm.contentsOfDirectory(
+                at: entry,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )) ?? []
+
+            bundles.append(contentsOf: children.filter { $0.pathExtension == "app" })
+        }
+
+        return bundles
+    }
+
     static func installedApps(
         isCancelled: () -> Bool = { false }
     ) -> [InstalledApp] {
@@ -411,13 +455,7 @@ enum SystemScanner {
 
         for root in roots {
 
-            guard let contents = try? fm.contentsOfDirectory(
-                at: root,
-                includingPropertiesForKeys: [.isApplicationKey],
-                options: [.skipsHiddenFiles]
-            ) else { continue }
-
-            for bundle in contents where bundle.pathExtension == "app" {
+            for bundle in appBundles(in: root) {
 
                 if isCancelled() { break }
 

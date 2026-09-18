@@ -32,9 +32,10 @@ struct Orphan: Identifiable, Equatable {
 ///   honest way to decide who owns them.
 /// - Apple's own identifiers are never candidates. Plenty belong to system
 ///   services with no app in /Applications at all.
-/// - Whether an app is installed is asked of LaunchServices, not of a
-///   directory listing, so an app on another volume, in a subfolder or in
-///   ~/Applications still counts as installed.
+/// - Whether an app is installed is asked of LaunchServices rather than of
+///   /Applications, so an app on another volume or in a subfolder still
+///   counts, and the question is asked of the identifier's ancestors too,
+///   so an app covers the helpers and group containers named after it.
 /// - Nothing is ever pre-selected in the UI. These are candidates for a
 ///   person to review, not a list to sweep.
 enum OrphanFinder {
@@ -145,18 +146,44 @@ enum OrphanFinder {
         if isApple(identifier) { return true }
         if vendors.contains(vendor(of: identifier)) { return true }
 
-        return NSWorkspace.shared
-            .urlForApplication(withBundleIdentifier: identifier) != nil
+        // Helpers, extensions and group containers hang their identifier
+        // off the app's own: "net.whatsapp.WhatsApp.shared" is WhatsApp's
+        // shared data, not a leftover. So each ancestor is asked about too,
+        // down to the vendor, and an installed app covers everything it
+        // spawned. This is the half that works without an app ever being
+        // listed, which is why it exists alongside the vendor set.
+        var parts = identifier.split(separator: ".")
+
+        while parts.count >= 2 {
+
+            let candidate = parts.joined(separator: ".")
+
+            if NSWorkspace.shared
+                .urlForApplication(withBundleIdentifier: candidate) != nil {
+                return true
+            }
+
+            parts.removeLast()
+        }
+
+        return false
     }
 
     /// Vendor prefixes of everything installed, gathered once per scan.
     static func installedVendors(home: URL? = nil) -> Set<String> {
 
-        let apps = SystemScanner.installedApps()
         var vendors: Set<String> = []
 
-        for app in apps {
+        for app in SystemScanner.installedApps() {
             if let id = app.bundleID ?? AppUninstaller.bundleID(of: app.url) {
+                vendors.insert(vendor(of: id))
+            }
+        }
+
+        // Something running right now is installed, wherever it was
+        // launched from: a disk image, a Downloads folder, another volume.
+        for app in NSWorkspace.shared.runningApplications {
+            if let id = app.bundleIdentifier {
                 vendors.insert(vendor(of: id))
             }
         }

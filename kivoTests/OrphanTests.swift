@@ -74,4 +74,66 @@ struct OrphanTests {
         // A vendor with nothing installed is not protected by the rule.
         #expect(!OrphanFinder.isInstalled("com.nothinghere.gone", vendors: ["com.docker"]))
     }
+
+    @Test("An app in a folder inside /Applications is still installed")
+    func appsOneFolderDown() throws {
+
+        // WhatsApp ships as /Applications/WhatsApp.localized/WhatsApp.app,
+        // and a listing that stopped at the top level called it
+        // uninstalled. That offered up every net.whatsapp.* container,
+        // including the group container holding the message database, for
+        // an app the user had open at the time.
+        let fm = FileManager.default
+        let root = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appending(path: "kivo-apps-\(UUID().uuidString)")
+
+        let top = root.appending(path: "Top.app")
+        let nested = root.appending(path: "Vendor.localized/Nested.app")
+        let inside = top.appending(path: "Contents/Applications/Embedded.app")
+
+        for url in [top, nested, inside] {
+            try fm.createDirectory(at: url, withIntermediateDirectories: true)
+        }
+
+        defer { try? fm.removeItem(at: root) }
+
+        let found = Set(SystemScanner.appBundles(in: root).map(\.lastPathComponent))
+
+        #expect(found.contains("Top.app"))
+        #expect(found.contains("Nested.app"))
+
+        // An app inside another app belongs to that app, not to the user,
+        // so the walk never enters a bundle.
+        #expect(!found.contains("Embedded.app"))
+    }
+
+    @Test("An installed app covers the identifiers hung off its own")
+    func ancestorsAreProtected() {
+
+        // Helpers, extensions and group containers are named after the app
+        // rather than registered themselves, so LaunchServices knows
+        // nothing about "net.whatsapp.WhatsApp.shared" on its own.
+        #expect(
+            OrphanFinder.isInstalled(
+                "net.whatsapp.WhatsApp.shared",
+                vendors: ["net.whatsapp"]
+            )
+        )
+
+        #expect(
+            OrphanFinder.isInstalled(
+                "com.example.app.ServiceExtension",
+                vendors: ["com.example"]
+            )
+        )
+
+        // The rule is a prefix of the identifier, not a substring of it:
+        // a different vendor is still a leftover.
+        #expect(
+            !OrphanFinder.isInstalled(
+                "com.other.app.ServiceExtension",
+                vendors: ["com.example"]
+            )
+        )
+    }
 }

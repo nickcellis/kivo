@@ -58,16 +58,21 @@ extension Color {
         Color(red: 0.525, green: 0.592, blue: 0.682)
     )
 
-    /// Blue. Cool enough to stay clear of the amber and red that carry
-    /// meaning below, so the accent never reads as a status.
+    /// The icon's own blue, taken from the two ends of its gradient so the
+    /// app and its Dock tile are the same colour rather than two blues that
+    /// nearly match.
+    ///
+    /// Which end goes where is decided by contrast, not by taste: the deep
+    /// end reads 8.7:1 on a white card and the lit end only 3.6:1, while on
+    /// the dark card the positions reverse.
     static let kivoAccent = kivo(
-        Color(red: 0.13, green: 0.40, blue: 0.86),
-        Color(red: 0.36, green: 0.62, blue: 1.00)
+        Color(red: 0.071, green: 0.267, blue: 0.659),   // icon, deep end
+        Color(red: 0.330, green: 0.580, blue: 1.000)    // icon, lit end
     )
 
     static let kivoAccentPressed = kivo(
-        Color(red: 0.10, green: 0.32, blue: 0.72),
-        Color(red: 0.28, green: 0.52, blue: 0.90)
+        Color(red: 0.047, green: 0.196, blue: 0.510),
+        Color(red: 0.259, green: 0.514, blue: 0.965)
     )
 
     // Status

@@ -106,35 +106,64 @@ struct PageView: View {
 
     /// Names the screen and states when the figures were taken — without it
     /// the page opens straight into numbers with no idea how old they are.
+    /// Reads the clock rather than saying "Dashboard" twice: the sidebar
+    /// already names the screen, so the page can open with something a
+    /// person would say.
+    private var greeting: String {
+
+        switch Calendar.current.component(.hour, from: Date()) {
+        case 0..<12: "Good morning"
+        case 12..<18: "Good afternoon"
+        default: "Good evening"
+        }
+    }
+
     private var header: some View {
 
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
 
-            Text(section.title)
-                .font(KivoFont.pageTitle)
-                .foregroundStyle(Color.kivoText)
+            HStack(spacing: 8) {
 
-            Text(section.subtitle)
-                .font(KivoFont.caption)
-                .foregroundStyle(Color.kivoDim)
-                .lineLimit(1)
+                Image(systemName: section.icon)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Color.kivoDim)
 
-            Spacer(minLength: 12)
+                Text(section.title)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color.kivoText)
 
-            HStack(spacing: 6) {
-
-                if store.isStale {
-                    KivoStatusPill(text: "Out of date", tint: .kivoWarn)
-                }
-
-                Text(lastScanLabel)
+                Text(section.subtitle)
                     .font(KivoFont.mono)
                     .foregroundStyle(Color.kivoDim)
                     .lineLimit(1)
+
+                Spacer(minLength: 12)
+
+                headerStamp
             }
+
+            Text(section == .overview ? greeting : section.title)
+                .font(KivoFont.pageTitle)
+                .foregroundStyle(Color.kivoText)
+
         }
-        .padding(.bottom, 2)
+        .padding(.bottom, 4)
         .accessibilityAddTraits(.isHeader)
+    }
+
+    private var headerStamp: some View {
+
+        HStack(spacing: 6) {
+
+            if store.isStale {
+                KivoStatusPill(text: "Out of date", tint: .kivoWarn)
+            }
+
+            Text(lastScanLabel)
+                .font(KivoFont.mono)
+                .foregroundStyle(Color.kivoDim)
+                .lineLimit(1)
+        }
     }
 
     /// Figures restored from a previous launch need their date, not just a

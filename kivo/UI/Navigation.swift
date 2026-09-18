@@ -118,11 +118,23 @@ struct Sidebar: View {
 
                         ForEach(group.sections) { section in
 
-                            Label(section.title, systemImage: section.icon)
-                                .font(.system(size: 13))
-                                .padding(.vertical, 3)
-                                .tag(section)
-                                .accessibilityHint(section.subtitle)
+                            Label {
+                                Text(section.title)
+                                    .font(.system(size: 13))
+                            } icon: {
+                                Image(systemName: section.icon)
+                                    // Colour on the selected icon alone.
+                                    // An accent used everywhere stops being
+                                    // an accent and becomes a background.
+                                    .foregroundStyle(
+                                        selectedSection == section
+                                            ? Color.kivoAccent
+                                            : Color.kivoDim
+                                    )
+                            }
+                            .padding(.vertical, 4)
+                            .tag(section)
+                            .accessibilityHint(section.subtitle)
                         }
 
                     } header: {

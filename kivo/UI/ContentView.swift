@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct ContentView: View {
 
@@ -133,7 +134,7 @@ struct PageView: View {
                     .foregroundStyle(Color.kivoText)
 
                 Text(section.subtitle)
-                    .font(KivoFont.mono)
+                    .font(KivoFont.body)
                     .foregroundStyle(Color.kivoDim)
                     .lineLimit(1)
 
@@ -170,7 +171,7 @@ struct PageView: View {
     /// time: "09:41" on a reading taken last week is a lie of omission.
     private var lastScanLabel: String {
 
-        guard let date = store.lastScan else { return "NEVER SCANNED" }
+        guard let date = store.lastScan else { return "Never scanned" }
 
         let today = Calendar.current.isDateInToday(date)
 
@@ -178,7 +179,7 @@ struct PageView: View {
             ? date.formatted(date: .omitted, time: .shortened)
             : date.formatted(date: .abbreviated, time: .shortened)
 
-        return "SCANNED \(stamp)".uppercased()
+        return "Scanned \(stamp)"
     }
 
     var body: some View {
@@ -518,9 +519,8 @@ struct HeroCard: View {
 
                 VStack(alignment: .leading, spacing: 2) {
 
-                    Text(item.title.uppercased())
-                        .font(KivoFont.label)
-                        .tracking(0.7)
+                    Text(item.title)
+                        .font(.system(size: 11.5))
                         .foregroundStyle(Color.kivoDim)
                         .lineLimit(1)
 
@@ -551,7 +551,7 @@ struct DiskCard: View {
         guard let fraction = volume?.fraction else { return .kivoDim }
         if fraction > 0.9 { return .kivoRisk }
         if fraction > 0.75 { return .kivoWarn }
-        return .kivoGood
+        return .kivoDim
     }
 
     var body: some View {
@@ -838,9 +838,8 @@ struct DataTable: View {
             } label: {
                 HStack(spacing: 3) {
 
-                    Text(text.uppercased())
-                        .font(KivoFont.label)
-                        .tracking(0.8)
+                    Text(text)
+                        .font(.system(size: 11.5, weight: .medium))
                         .foregroundStyle(isActive(field) ? Color.kivoText : Color.kivoDim)
 
                     if let ascending = direction(field) {
@@ -857,9 +856,8 @@ struct DataTable: View {
 
         } else {
 
-            Text(text.uppercased())
-                .font(KivoFont.label)
-                .tracking(0.8)
+            Text(text)
+                .font(.system(size: 11.5, weight: .medium))
                 .foregroundStyle(Color.kivoDim)
         }
     }

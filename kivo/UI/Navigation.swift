@@ -141,9 +141,8 @@ struct Sidebar: View {
 
                         // The same uppercase monospace micro-label the cards
                         // use, so the sidebar belongs to the same instrument.
-                        Text(group.title.uppercased())
-                            .font(KivoFont.label)
-                            .tracking(0.8)
+                        Text(group.title)
+                            .font(.system(size: 11.5, weight: .medium))
                             .foregroundStyle(Color.kivoDim)
                             .padding(.top, 8)
                             .padding(.bottom, 2)
@@ -184,9 +183,8 @@ private struct SidebarFooter: View {
 
                 HStack(spacing: 6) {
 
-                    Text(status.shortLabel.uppercased())
-                        .font(KivoFont.label)
-                        .tracking(0.8)
+                    Text(status.shortLabel)
+                        .font(.system(size: 11.5, weight: .medium))
                         .foregroundStyle(Color.kivoDim)
 
                     Spacer(minLength: 6)
@@ -200,11 +198,7 @@ private struct SidebarFooter: View {
 
                 if let volume {
 
-                    KivoProgressBar(
-                        fraction: volume.fraction,
-                        tint: status.tint,
-                        height: 3
-                    )
+                    KivoProgressBar(fraction: volume.fraction, height: 3)
 
                     Text("\(volume.free.byteLabel) free")
                         .font(KivoFont.caption)

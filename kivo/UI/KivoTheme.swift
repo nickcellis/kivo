@@ -17,10 +17,11 @@ extension Color {
         })
     }
 
-    /// Window ground.
+    /// Window ground. Neutral, not navy: a blue page leaves the blue
+    /// accent nothing to be, and the sidebar beside it is already grey.
     static let kivoBackground = kivo(
-        Color(red: 0.97, green: 0.965, blue: 0.95),
-        Color(red: 0.055, green: 0.086, blue: 0.133)
+        Color(red: 0.965, green: 0.965, blue: 0.969),
+        Color(red: 0.051, green: 0.051, blue: 0.055)
     )
 
     /// Card surface — a touch lifted from the ground, never a material.
@@ -41,8 +42,8 @@ extension Color {
 
     /// Hairline borders. Cards are defined by their edge, not a shadow.
     static let kivoBorder = kivo(
-        Color.black.opacity(0.09),
-        Color.white.opacity(0.07)
+        Color.black.opacity(0.10),
+        Color.white.opacity(0.13)
     )
 
     /// Quiet fill for tracks, chips and hover.
@@ -115,7 +116,10 @@ enum KivoMetrics {
 
 enum KivoFont {
 
-    static let pageTitle = Font.system(size: 17, weight: .semibold)
+    /// The greeting is the biggest thing on the page by a wide margin and
+    /// everything under it is small. That gap is what makes a layout look
+    /// deliberate rather than uniformly dense.
+    static let pageTitle = Font.system(size: 34, weight: .semibold)
 
     /// Uppercase micro label that heads each card. 10.5pt rather than the
     /// 9.5 it started at: letter-spaced uppercase monospace is the hardest

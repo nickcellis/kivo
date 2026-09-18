@@ -205,19 +205,22 @@ extension SectionPageConfig {
                         detail: store.volume.map { "of \($0.total.byteLabel) used" }
                             ?? "startup disk",
                         pillText: store.volume.map { "\(Int($0.fraction * 100))% full" },
-                        pillTint: diskTint(store.volume?.fraction),
+                        pillTint: quietUnlessBusy(store.volume?.fraction),
                         fraction: store.volume?.fraction,
-                        barTint: diskTint(store.volume?.fraction),
+                        barTint: quietUnlessBusy(store.volume?.fraction),
                         info: diskInfo
                     ),
+                    // Not "safe to clean" again: the hero above already
+                    // leads with that figure, and a card repeating it is a
+                    // slot the page could have spent on something else.
                     .init(
-                        icon: "sparkles",
-                        title: "Safe to clean",
-                        value: value(.cleanable, store.cleanableBytes.byteLabel),
-                        detail: "caches, logs and the Trash",
-                        pillText: cleanable ? "Review" : nil,
-                        pillTint: .kivoWarn,
-                        info: cleanableInfo
+                        icon: "square.stack.3d.up.fill",
+                        title: "Applications",
+                        value: value(.applications, store.appsBytes.byteLabel),
+                        detail: store.has(.applications)
+                            ? count(.applications, store.apps.count, "app") + " installed"
+                            : "not measured yet",
+                        info: "Every app bundle in /Applications and ~/Applications, sized on disk."
                     ),
                     .init(
                         icon: "doc.fill",
@@ -938,6 +941,15 @@ extension SectionPageConfig {
         return parts.isEmpty
             ? "These folders rebuild themselves."
             : parts.joined(separator: ". ") + "."
+    }
+
+    /// Grey until the disk is actually filling up. A capacity bar that is
+    /// green at 40% has spent its colour before anything is wrong.
+    private static func quietUnlessBusy(_ fraction: Double?) -> Color {
+        guard let fraction else { return .kivoDim }
+        if fraction > 0.9 { return .kivoRisk }
+        if fraction > 0.75 { return .kivoWarn }
+        return .kivoDim
     }
 
     private static func diskTint(_ fraction: Double?) -> Color {

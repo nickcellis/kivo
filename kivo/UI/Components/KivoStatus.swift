@@ -63,9 +63,8 @@ struct KivoCardLabel: View {
 
         HStack(spacing: 6) {
 
-            Text(text.uppercased())
-                .font(KivoFont.label)
-                .tracking(0.8)
+            Text(text)
+                .font(.system(size: 12.5))
                 .foregroundStyle(Color.kivoDim)
 
             if let info {
@@ -127,6 +126,9 @@ struct KivoInfoButton: View {
 struct KivoStatusPill: View {
 
     let text: String
+
+    /// Neutral unless something is actually wrong. Six green pills on one
+    /// screen is the same as none: the eye stops reading them.
     var tint: Color = .kivoDim
 
     var body: some View {
@@ -135,9 +137,9 @@ struct KivoStatusPill: View {
             .font(KivoFont.pill)
             .tracking(0.5)
             .foregroundStyle(tint)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
-            .background(tint.opacity(0.14))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2.5)
+            .background(tint.opacity(0.13))
             .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
             .accessibilityLabel(text)
     }
@@ -187,7 +189,9 @@ func kivoSplitMeasure(_ text: String) -> (value: String, unit: String?) {
 struct KivoProgressBar: View {
 
     let fraction: Double
-    var tint: Color = .kivoAccent
+
+    /// Neutral by default. A capacity bar is a reading, not an alarm.
+    var tint: Color = .kivoDim
     var height: CGFloat = 4
 
     var body: some View {

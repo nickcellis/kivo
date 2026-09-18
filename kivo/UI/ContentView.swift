@@ -244,6 +244,7 @@ struct HeroCard: View {
 
     @State private var showClean = false
     @State private var showReview = false
+    @State private var showDuplicates = false
 
     private var isScanning: Bool { store.phase.isScanning }
 
@@ -315,6 +316,16 @@ struct HeroCard: View {
                             }
                         }
 
+                        if config.offersDuplicates {
+
+                            KivoSecondaryButton(
+                                title: "Review",
+                                icon: "checklist"
+                            ) {
+                                showDuplicates = true
+                            }
+                        }
+
                         if config.offersClean {
 
                             KivoSecondaryButton(
@@ -344,6 +355,9 @@ struct HeroCard: View {
         }
         .sheet(isPresented: $showReview) {
             OrphanSheet(store: store)
+        }
+        .sheet(isPresented: $showDuplicates) {
+            DuplicateSheet(store: store)
         }
     }
 

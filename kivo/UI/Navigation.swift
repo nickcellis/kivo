@@ -8,6 +8,7 @@ enum SidebarSection: String, CaseIterable, Identifiable {
     case overview
     case clean
     case leftovers
+    case duplicates
     case applications
     case storage
     case largeFiles
@@ -22,6 +23,7 @@ enum SidebarSection: String, CaseIterable, Identifiable {
         case .overview: "Dashboard"
         case .clean: "Clean"
         case .leftovers: "Leftovers"
+        case .duplicates: "Duplicates"
         case .applications: "Applications"
         case .storage: "Storage"
         case .largeFiles: "Large Files"
@@ -36,6 +38,7 @@ enum SidebarSection: String, CaseIterable, Identifiable {
         case .overview: "square.grid.2x2"
         case .clean: "sparkles"
         case .leftovers: "shippingbox"
+        case .duplicates: "doc.on.doc"
         case .applications: "square.stack.3d.up"
         case .storage: "internaldrive"
         case .largeFiles: "doc"
@@ -50,6 +53,7 @@ enum SidebarSection: String, CaseIterable, Identifiable {
         case .overview: "What's on this Mac and what can go."
         case .clean: "Files your Mac can rebuild by itself."
         case .leftovers: "Support files from apps you no longer have."
+        case .duplicates: "The same file kept in more than one place."
         case .applications: "What's installed, and how big each app is."
         case .storage: "How the startup disk is filled."
         case .largeFiles: "Files of 1 GB or more in your home folder."
@@ -84,7 +88,7 @@ enum SidebarGroup: String, CaseIterable, Identifiable {
     var sections: [SidebarSection] {
         switch self {
         case .main: [.overview]
-        case .cleanup: [.clean, .leftovers, .applications]
+        case .cleanup: [.clean, .leftovers, .duplicates, .applications]
         case .storage: [.storage, .largeFiles, .diskMap]
         case .other: [.quarantine, .activity]
         }

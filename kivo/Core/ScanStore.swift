@@ -11,6 +11,7 @@ enum ScanScope: String, CaseIterable, Hashable {
     case applications
     case largeFiles
     case orphans
+    case duplicates
 
     static let everything = Set(ScanScope.allCases)
 
@@ -21,6 +22,7 @@ enum ScanScope: String, CaseIterable, Hashable {
         case .applications: "Checking applications"
         case .largeFiles: "Looking for large files"
         case .orphans: "Checking for leftovers"
+        case .duplicates: "Comparing files for copies"
         }
     }
 
@@ -33,6 +35,7 @@ enum ScanScope: String, CaseIterable, Hashable {
         case .applications: 0.24
         case .largeFiles: 0.40
         case .orphans: 0.22
+        case .duplicates: 0.30
         }
     }
 }
@@ -62,6 +65,7 @@ private enum ScanTask: Equatable {
     case applications
     case largeFiles
     case orphans
+    case duplicates
 
     var id: String {
         switch self {
@@ -70,6 +74,7 @@ private enum ScanTask: Equatable {
         case .applications: "applications"
         case .largeFiles: "largeFiles"
         case .orphans: "orphans"
+        case .duplicates: "duplicates"
         }
     }
 
@@ -80,6 +85,7 @@ private enum ScanTask: Equatable {
         case .applications: "Checking applications"
         case .largeFiles: "Looking for large files"
         case .orphans: "Checking for leftovers"
+        case .duplicates: "Comparing files for copies"
         }
     }
 
@@ -90,6 +96,7 @@ private enum ScanTask: Equatable {
         case .applications: "square.stack.3d.up"
         case .largeFiles: "doc"
         case .orphans: "shippingbox"
+        case .duplicates: "doc.on.doc"
         }
     }
 
@@ -106,6 +113,7 @@ private enum ScanTask: Equatable {
         case .applications: 0.24
         case .largeFiles: 0.40
         case .orphans: 0.22
+        case .duplicates: 0.30
         }
     }
 }
@@ -143,6 +151,9 @@ final class ScanStore: ObservableObject {
 
     /// Support files whose app is gone. Never acted on without review.
     @Published private(set) var orphans: [Orphan] = []
+
+    /// Files with identical contents, grouped.
+    @Published private(set) var duplicates: [DuplicateSet] = []
 
     /// Which parts have real figures behind them. A page that hasn't been
     /// scanned shows a dash rather than borrowing another page's freshness.
@@ -225,6 +236,15 @@ final class ScanStore: ObservableObject {
 
     var orphanBytes: Int64 {
         orphans.reduce(0) { $0 + $1.size }
+    }
+
+    /// What keeping every copy costs, which is the total minus one of each.
+    var duplicateBytes: Int64 {
+        duplicates.reduce(0) { $0 + $1.reclaimable }
+    }
+
+    var duplicateFileCount: Int {
+        duplicates.reduce(0) { $0 + $1.files.count }
     }
 
     /// Apps nobody has opened in months, largest first. The uninstaller's
@@ -424,6 +444,7 @@ final class ScanStore: ObservableObject {
 
         if scopes.contains(.applications) { tasks.append(.applications) }
         if scopes.contains(.orphans) { tasks.append(.orphans) }
+        if scopes.contains(.duplicates) { tasks.append(.duplicates) }
         if scopes.contains(.largeFiles) { tasks.append(.largeFiles) }
 
         return tasks
@@ -467,6 +488,11 @@ final class ScanStore: ObservableObject {
         case .orphans:
             orphans = await Self.offMain {
                 OrphanFinder.find { Task.isCancelled }
+            }
+
+        case .duplicates:
+            duplicates = await Self.offMain {
+                DuplicateFinder.find(isCancelled: { Task.isCancelled })
             }
 
         case .largeFiles:
@@ -637,6 +663,54 @@ final class ScanStore: ObservableObject {
 
             await self.finishCleaning(result)
             self.scan([.disk, .orphans])
+        }
+    }
+
+    /// Copies go to quarantine like everything else. The set they came
+    /// from is re-measured afterwards, so a group that is down to one file
+    /// stops being reported as a duplicate.
+    func removeDuplicates(_ urls: Set<URL>) {
+
+        guard !isCleaning, !urls.isEmpty else { return }
+
+        isCleaning = true
+        cleanProgress = 0
+        lastCleanMode = .quarantine
+
+        var sizes: [URL: Int64] = [:]
+        for set in duplicates {
+            for file in set.files { sizes[file] = set.size }
+        }
+
+        task?.cancel()
+
+        task = Task { [weak self] in
+
+            guard let self else { return }
+
+            var result = CleanResult()
+
+            for (index, url) in urls.enumerated() {
+
+                if Task.isCancelled { break }
+
+                await self.setCleanProgress(Double(index) / Double(urls.count))
+
+                do {
+                    try Quarantine.shared.store(
+                        url,
+                        label: "Duplicate",
+                        size: sizes[url] ?? 0
+                    )
+                    result.removed += 1
+                    result.bytes += sizes[url] ?? 0
+                } catch {
+                    result.failed += 1
+                }
+            }
+
+            await self.finishCleaning(result)
+            self.scan([.disk, .duplicates])
         }
     }
 

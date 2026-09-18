@@ -57,6 +57,9 @@ struct SectionPageConfig {
     /// because nothing in it starts selected.
     var offersReview: Bool = false
 
+    /// And for duplicates, which group their files rather than listing them.
+    var offersDuplicates: Bool = false
+
     let scope: [SectionScope]
     let scopeState: String
 
@@ -85,6 +88,7 @@ extension SidebarSection {
         case .overview: "See the whole Mac at once"
         case .clean: "Caches, logs and the Trash"
         case .leftovers: "Files from apps you removed"
+        case .duplicates: "The same file, kept twice"
         case .applications: "What's installed, by size"
         case .storage: "How the disk is filled"
         case .largeFiles: "Files over 1 GB"
@@ -99,6 +103,7 @@ extension SidebarSection {
         case .overview: "square.grid.2x2.fill"
         case .clean: "sparkles"
         case .leftovers: "shippingbox.fill"
+        case .duplicates: "doc.on.doc.fill"
         case .applications: "square.stack.3d.up.fill"
         case .storage: "internaldrive.fill"
         case .largeFiles: "doc.fill"
@@ -411,6 +416,97 @@ extension SectionPageConfig {
                     )
                 ),
                 sideActions: [.applications, .clean, .quarantine]
+            )
+
+        case .duplicates:
+
+            let scanned = store.has(.duplicates)
+            let biggest = store.duplicates.prefix(3)
+
+            return SectionPageConfig(
+                headline: scanned
+                    ? (store.duplicates.isEmpty
+                        ? "No duplicates found"
+                        : "\(store.duplicateBytes.byteLabel) held in copies")
+                    : "Ready when you are",
+                subline: scanned
+                    ? "\(store.duplicates.count) set\(store.duplicates.count == 1 ? "" : "s") of identical files across \(store.duplicateFileCount) copies. Keeping one of each frees the rest."
+                    : "A scan compares files by content, not by name.",
+                primaryTitle: scanned ? "Scan Again" : "Find Duplicates",
+                primaryIcon: "doc.on.doc.fill",
+                scanScopes: [.duplicates],
+                offersDuplicates: scanned && !store.duplicates.isEmpty,
+                scope: [
+                    .init(
+                        icon: "doc.on.doc",
+                        title: "Sets",
+                        state: count(.duplicates, store.duplicates.count, "set")
+                    ),
+                    .init(
+                        icon: "doc",
+                        title: "Copies",
+                        state: count(.duplicates, store.duplicateFileCount, "file")
+                    ),
+                    .init(
+                        icon: "internaldrive",
+                        title: "Reclaimable",
+                        state: value(.duplicates, store.duplicateBytes.byteLabel)
+                    )
+                ],
+                scopeState: dash,
+                metricLabel: "Duplicates",
+                metricValue: value(.duplicates, store.duplicateBytes.byteLabel),
+                info: """
+                    Files are grouped by size first, then compared by a hash \
+                    of their contents, so a match is identical rather than \
+                    similarly named. Hard links and clones count once, since \
+                    removing one frees nothing. Dependency and build folders \
+                    are skipped: three copies of a package in three projects \
+                    are three projects working, not wasted space.
+                    """,
+                tiles: scanned && !biggest.isEmpty
+                    ? biggest.map { set in
+                        SectionTile(
+                            icon: "doc.on.doc.fill",
+                            fileURL: set.files.first,
+                            title: set.name,
+                            value: set.reclaimable.byteLabel,
+                            detail: "\(set.files.count) copies of \(set.size.byteLabel)",
+                            pillText: "\(set.files.count)×",
+                            pillTint: .kivoWarn
+                        )
+                    }
+                    : [
+                        .init(icon: "doc.on.doc.fill", title: "Duplicates",
+                              value: dash, detail: "not scanned yet"),
+                        .init(icon: "doc", title: "Copies",
+                              value: dash, detail: "not scanned yet"),
+                        .init(icon: "internaldrive", title: "Reclaimable",
+                              value: dash, detail: "not scanned yet")
+                    ],
+                listTitle: "Every set found",
+                listRows: store.duplicates.prefix(14).map { set in
+                    ActivityRow.Model(
+                        icon: "doc.on.doc",
+                        fileURL: set.files.first,
+                        title: set.name,
+                        badge: "\(set.files.count)×",
+                        detail: set.files.first?.deletingLastPathComponent().path
+                            .replacingOccurrences(of: NSHomeDirectory(), with: "~") ?? "",
+                        value: set.reclaimable.byteLabel,
+                        sortValue: set.reclaimable
+                    )
+                }.emptyFallback(
+                    .init(
+                        icon: "doc.on.doc",
+                        title: "Duplicates",
+                        detail: scanned
+                            ? "Nothing on this Mac is stored twice"
+                            : "Scan to compare files by content",
+                        value: dash
+                    )
+                ),
+                sideActions: [.largeFiles, .clean, .quarantine]
             )
 
         case .applications:

@@ -121,6 +121,71 @@ struct OrphanTests {
         #expect(!found.contains("Embedded.app"))
     }
 
+    @Test("Leftovers gather by vendor, biggest group first")
+    func grouping() throws {
+
+        func orphan(_ id: String, _ size: Int64) -> Orphan {
+            Orphan(
+                url: URL(fileURLWithPath: "/tmp/\(id)"),
+                identifier: id,
+                size: size,
+                kind: "Container",
+                modified: nil
+            )
+        }
+
+        let groups = OrphanFinder.grouped([
+            orphan("com.fabriceleyne.menubarstats", 400),
+            orphan("com.fabriceleyne.menubarstats.mbsCPUWidget", 100),
+            orphan("com.fabriceleyne.menubarstatshelper", 50),
+            orphan("com.operasoftware.Opera", 900)
+        ])
+
+        #expect(groups.count == 2)
+
+        // Biggest first, so the row worth acting on leads.
+        #expect(groups.first?.vendor == "com.operasoftware")
+
+        let menubar = try #require(groups.first { $0.vendor == "com.fabriceleyne" })
+
+        #expect(menubar.items.count == 3)
+        #expect(menubar.size == 550)
+
+        // The widgets an app leaves behind carry their own identifiers, so
+        // grouping on anything narrower than the vendor splits one app
+        // across several rows. The names are listed biggest first, without
+        // repeating one.
+        #expect(menubar.apps == ["menubarstats", "menubarstatshelper"])
+    }
+
+    @Test("A vendor's freshest file is what the group reports")
+    func groupDate() throws {
+
+        let old = Date(timeIntervalSince1970: 1_000_000)
+        let recent = Date(timeIntervalSince1970: 2_000_000)
+
+        func orphan(_ id: String, _ modified: Date?) -> Orphan {
+            Orphan(
+                url: URL(fileURLWithPath: "/tmp/\(id)"),
+                identifier: id,
+                size: 1,
+                kind: "Container",
+                modified: modified
+            )
+        }
+
+        let group = try #require(
+            OrphanFinder.grouped([
+                orphan("com.example.app", old),
+                orphan("com.example.app.helper", recent),
+                orphan("com.example.app.widget", nil)
+            ]).first
+        )
+
+        // A vendor with one recent file is not untouched for years.
+        #expect(group.modified == recent)
+    }
+
     @Test("An installed app covers the identifiers hung off its own")
     func ancestorsAreProtected() {
 

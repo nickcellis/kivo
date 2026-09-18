@@ -1,6 +1,36 @@
 import Foundation
 import AppKit
 
+/// One vendor's leftovers, gathered into a single row.
+///
+/// The list is long for a reason that has nothing to do with how much
+/// there is to reclaim: on one Mac, 217 files belonged to 66 vendors, and
+/// a single menu bar app accounted for 44 of them, one per widget. Read
+/// file by file that is a wall of identifiers nobody can judge. Read by
+/// vendor it is one question per app, which is the question somebody
+/// actually has an answer to.
+struct OrphanGroup: Identifiable, Equatable {
+
+    let vendor: String
+
+    /// The distinct app names inside, biggest first: "menubarstats",
+    /// "menubarstatshelper". Shown under the vendor, because "com.readdle"
+    /// says less than "smartemail-Mac, Spark-Mac".
+    let apps: [String]
+
+    let items: [Orphan]
+
+    var id: String { vendor }
+
+    var size: Int64 { items.reduce(0) { $0 + $1.size } }
+
+    /// The freshest thing in the group, so a vendor with one recent file
+    /// doesn't look untouched for years.
+    var modified: Date? { items.compactMap(\.modified).max() }
+
+    var urls: Set<URL> { Set(items.map(\.url)) }
+}
+
 /// Support files whose app is no longer installed.
 struct Orphan: Identifiable, Equatable {
 
@@ -282,5 +312,48 @@ enum OrphanFinder {
         }
 
         return found.sorted { $0.size > $1.size }
+    }
+
+    // MARK: Grouping
+
+    /// Gathers leftovers by vendor, biggest group first.
+    ///
+    /// Vendor rather than the full identifier, because the helpers,
+    /// widgets and extensions an app leaves behind each carry their own:
+    /// grouping on anything narrower puts "menubarstats" and
+    /// "menubarstatshelper" in separate rows, which is the split nobody
+    /// wanted. It is the same two-component key the safety rules use, so
+    /// what Kivo groups and what Kivo protects are one idea.
+    static func grouped(_ orphans: [Orphan]) -> [OrphanGroup] {
+
+        var order: [String] = []
+        var byVendor: [String: [Orphan]] = [:]
+
+        for orphan in orphans {
+
+            let key = vendor(of: orphan.identifier)
+
+            if byVendor[key] == nil { order.append(key) }
+
+            byVendor[key, default: []].append(orphan)
+        }
+
+        return order.map { key in
+
+            let items = (byVendor[key] ?? []).sorted { $0.size > $1.size }
+
+            var apps: [String] = []
+
+            for item in items {
+
+                let parts = item.identifier.split(separator: ".")
+                let name = parts.count >= 3 ? String(parts[2]) : item.identifier
+
+                if !apps.contains(name) { apps.append(name) }
+            }
+
+            return OrphanGroup(vendor: key, apps: apps, items: items)
+        }
+        .sorted { $0.size > $1.size }
     }
 }

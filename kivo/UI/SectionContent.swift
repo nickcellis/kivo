@@ -341,6 +341,10 @@ extension SectionPageConfig {
             let scanned = store.has(.orphans)
             let biggest = store.orphans.prefix(3)
 
+            // The page counts what the sheet groups, so the number here
+            // and the number of rows there describe the same list.
+            let vendors = OrphanFinder.grouped(store.orphans).count
+
             return SectionPageConfig(
                 headline: scanned
                     ? (store.orphans.isEmpty
@@ -348,7 +352,7 @@ extension SectionPageConfig {
                         : "\(store.orphanBytes.byteLabel) from apps you no longer have")
                     : "Ready when you are",
                 subline: scanned
-                    ? "\(store.orphans.count) folder\(store.orphans.count == 1 ? "" : "s") name an app that isn't installed. Check the list before removing any."
+                    ? "\(store.orphans.count) folder\(store.orphans.count == 1 ? "" : "s") from \(vendors) vendor\(vendors == 1 ? "" : "s") name an app that isn't installed. Check the list before removing any."
                     : "A scan looks for support files whose app has gone.",
                 primaryTitle: scanned ? "Scan Again" : "Find Leftovers",
                 primaryIcon: "shippingbox.fill",

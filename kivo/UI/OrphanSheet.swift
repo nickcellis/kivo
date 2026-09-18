@@ -1,12 +1,11 @@
 import SwiftUI
 
-/// How the list is ordered. Size descending to begin with, the same order
-/// the finder returns, so the biggest thing to reclaim is the first thing
-/// read.
+/// How the list is ordered. Size descending to begin with, so the four
+/// rows holding almost all of the space are the first four read.
 enum OrphanSort: Equatable {
 
     case name(ascending: Bool)
-    case kind(ascending: Bool)
+    case files(ascending: Bool)
     case used(ascending: Bool)
     case size(ascending: Bool)
 }
@@ -18,46 +17,53 @@ enum OrphanSort: Equatable {
 /// app a folder belonged to, so the default is to take nothing and let the
 /// list be read first. Select all is one click away in the header, but it
 /// is a click somebody has to make.
+///
+/// Rows are vendors rather than files. A vendor holding one file is drawn
+/// as that file, since a group of one is just the file with an extra
+/// chevron in front of it.
 struct OrphanSheet: View {
 
     @ObservedObject var store: ScanStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var selected: Set<URL> = []
+    @State private var expanded: Set<String> = []
     @State private var sort: OrphanSort = .size(ascending: false)
     @State private var isConfirming = false
 
-    private var rows: [Orphan] {
+    private var groups: [OrphanGroup] {
+
+        let groups = OrphanFinder.grouped(store.orphans)
 
         switch sort {
 
         case .name(let ascending):
-            return store.orphans.sorted {
-                let order = $0.identifier.localizedStandardCompare($1.identifier)
+            return groups.sorted {
+                let order = $0.vendor.localizedStandardCompare($1.vendor)
                 return ascending ? order == .orderedAscending : order == .orderedDescending
             }
 
-        case .kind(let ascending):
-            return store.orphans.sorted {
-                // Same kind falls back to size, so the groups read
-                // biggest first rather than in whatever order they were
-                // found.
-                guard $0.kind != $1.kind else { return $0.size > $1.size }
-                let order = $0.kind.localizedStandardCompare($1.kind)
-                return ascending ? order == .orderedAscending : order == .orderedDescending
+        case .files(let ascending):
+            return groups.sorted {
+                // Same number of files falls back to size, so the ones
+                // worth removing lead their band.
+                guard $0.items.count != $1.items.count else { return $0.size > $1.size }
+                return ascending
+                    ? $0.items.count < $1.items.count
+                    : $0.items.count > $1.items.count
             }
 
         case .used(let ascending):
-            return store.orphans.sorted {
-                // A folder with no date sorts last either way rather than
-                // pretending to be the oldest thing on the list.
+            return groups.sorted {
+                // A vendor with no dates at all sorts last either way,
+                // rather than pretending to be the oldest on the list.
                 guard let left = $0.modified else { return false }
                 guard let right = $1.modified else { return true }
                 return ascending ? left < right : left > right
             }
 
         case .size(let ascending):
-            return store.orphans.sorted {
+            return groups.sorted {
                 ascending ? $0.size < $1.size : $0.size > $1.size
             }
         }
@@ -87,17 +93,33 @@ struct OrphanSheet: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    ForEach(rows) { orphan in
-                        row(orphan)
+                    ForEach(groups) { group in
+
+                        if let only = group.items.first, group.items.count == 1 {
+
+                            row(only, indented: false)
+
+                        } else {
+
+                            groupRow(group)
+
+                            if expanded.contains(group.id) {
+                                ForEach(group.items) { item in
+                                    Divider().overlay(Color.kivoBorder)
+                                    row(item, indented: true)
+                                }
+                            }
+                        }
+
                         Divider().overlay(Color.kivoBorder)
                     }
                 }
             }
-            .frame(maxHeight: 340)
+            .frame(maxHeight: 360)
 
             footer
         }
-        .frame(width: 560)
+        .frame(width: 600)
         .background(Color.kivoSurface)
         .confirmationDialog(
             "Set aside \(selectedBytes.byteLabel)?",
@@ -121,7 +143,7 @@ struct OrphanSheet: View {
                 .font(KivoFont.pageTitle)
                 .foregroundStyle(Color.kivoText)
 
-            Text("Support files whose app Kivo can't find. Check anything you recognise before removing it.")
+            Text("Support files whose app Kivo can't find, gathered by the vendor that left them. Check anything you recognise before removing it.")
                 .font(KivoFont.caption)
                 .foregroundStyle(Color.kivoDim)
                 .fixedSize(horizontal: false, vertical: true)
@@ -150,8 +172,8 @@ struct OrphanSheet: View {
 
             Spacer(minLength: 8)
 
-            column("Kind", field: .kind(ascending: true))
-                .frame(width: 112, alignment: .leading)
+            column("Files", field: .files(ascending: false), trailing: true)
+                .frame(width: 52, alignment: .trailing)
 
             column("Last used", field: .used(ascending: false), trailing: true)
                 .frame(width: 96, alignment: .trailing)
@@ -165,8 +187,8 @@ struct OrphanSheet: View {
 
     /// A column heading that sorts, and says which way it is pointing.
     /// Clicking the active one reverses it; clicking another starts that
-    /// column at the direction people expect of it, which is A to Z for
-    /// text and largest first for a number or a date.
+    /// column at the direction people expect of it, which is A to Z for a
+    /// name and largest or newest first for everything else.
     private func column(
         _ text: String,
         field: OrphanSort,
@@ -203,7 +225,7 @@ struct OrphanSheet: View {
     private func isActive(_ field: OrphanSort) -> Bool {
 
         switch (sort, field) {
-        case (.name, .name), (.kind, .kind), (.used, .used), (.size, .size): true
+        case (.name, .name), (.files, .files), (.used, .used), (.size, .size): true
         default: false
         }
     }
@@ -213,7 +235,7 @@ struct OrphanSheet: View {
         guard isActive(field) else { return nil }
 
         return switch sort {
-        case .name(let ascending), .kind(let ascending),
+        case .name(let ascending), .files(let ascending),
              .used(let ascending), .size(let ascending): ascending
         }
     }
@@ -222,7 +244,7 @@ struct OrphanSheet: View {
 
         switch current {
         case .name(let ascending): .name(ascending: !ascending)
-        case .kind(let ascending): .kind(ascending: !ascending)
+        case .files(let ascending): .files(ascending: !ascending)
         case .used(let ascending): .used(ascending: !ascending)
         case .size(let ascending): .size(ascending: !ascending)
         }
@@ -230,17 +252,77 @@ struct OrphanSheet: View {
 
     // MARK: Rows
 
-    private func row(_ orphan: Orphan) -> some View {
+    private func groupRow(_ group: OrphanGroup) -> some View {
+
+        let open = expanded.contains(group.id)
+
+        return HStack(spacing: 10) {
+
+            Toggle("", isOn: binding(for: group))
+                .labelsHidden()
+                .toggleStyle(.checkbox)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(Color.kivoDim)
+                .rotationEffect(.degrees(open ? 90 : 0))
+                .frame(width: 10)
+
+            VStack(alignment: .leading, spacing: 2) {
+
+                Text(group.vendor)
+                    .font(KivoFont.body)
+                    .foregroundStyle(Color.kivoText)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Text(group.apps.joined(separator: ", "))
+                    .font(KivoFont.caption)
+                    .foregroundStyle(Color.kivoDim)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+
+            Spacer(minLength: 8)
+
+            Text("\(group.items.count)")
+                .font(KivoFont.mono)
+                .foregroundStyle(Color.kivoDim)
+                .frame(width: 52, alignment: .trailing)
+
+            Text(dateLabel(group.modified))
+                .font(KivoFont.mono)
+                .foregroundStyle(Color.kivoDim)
+                .lineLimit(1)
+                .frame(width: 96, alignment: .trailing)
+
+            Text(group.size.byteLabel)
+                .font(KivoFont.mono)
+                .foregroundStyle(Color.kivoText)
+                .frame(width: 76, alignment: .trailing)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if open { expanded.remove(group.id) } else { expanded.insert(group.id) }
+        }
+        .kivoPointerCursor()
+        .help(open ? "Hide these files" : "Show these files")
+    }
+
+    private func row(_ orphan: Orphan, indented: Bool) -> some View {
 
         HStack(spacing: 10) {
 
             Toggle("", isOn: binding(for: orphan))
                 .labelsHidden()
                 .toggleStyle(.checkbox)
+                .padding(.leading, indented ? 20 : 0)
 
             VStack(alignment: .leading, spacing: 2) {
 
-                Text(orphan.identifier)
+                Text(label(for: orphan, indented: indented))
                     .font(KivoFont.body)
                     .foregroundStyle(Color.kivoText)
                     .lineLimit(1)
@@ -261,7 +343,7 @@ struct OrphanSheet: View {
                 .fixedSize()
                 .frame(width: 112, alignment: .leading)
 
-            Text(orphan.modified?.formatted(.relative(presentation: .numeric)) ?? "No record")
+            Text(dateLabel(orphan.modified))
                 .font(KivoFont.mono)
                 .foregroundStyle(Color.kivoDim)
                 .lineLimit(1)
@@ -275,6 +357,24 @@ struct OrphanSheet: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .kivoFileMenu(orphan.url)
+    }
+
+    /// Under a vendor, the vendor is already on the row above, and
+    /// repeating it is what pushed the part that differs off the end:
+    /// "com.fabriceley….mbsCPUWidget" told nobody which widget this was.
+    private func label(for orphan: Orphan, indented: Bool) -> String {
+
+        guard indented else { return orphan.identifier }
+
+        let prefix = OrphanFinder.vendor(of: orphan.identifier) + "."
+
+        guard orphan.identifier.hasPrefix(prefix) else { return orphan.identifier }
+
+        return String(orphan.identifier.dropFirst(prefix.count))
+    }
+
+    private func dateLabel(_ date: Date?) -> String {
+        date?.formatted(.relative(presentation: .numeric)) ?? "No record"
     }
 
     private var footer: some View {
@@ -292,7 +392,7 @@ struct OrphanSheet: View {
                         .font(KivoFont.body)
                         .foregroundStyle(Color.kivoText)
 
-                    Text("\(store.orphans.count) item\(store.orphans.count == 1 ? "" : "s") found")
+                    Text("\(store.orphans.count) file\(store.orphans.count == 1 ? "" : "s") from \(groups.count) vendor\(groups.count == 1 ? "" : "s")")
                         .font(KivoFont.caption)
                         .foregroundStyle(Color.kivoDim)
 
@@ -320,12 +420,28 @@ struct OrphanSheet: View {
         .padding(14)
     }
 
+    // MARK: Selection
+
     private func binding(for orphan: Orphan) -> Binding<Bool> {
 
         Binding(
             get: { selected.contains(orphan.url) },
             set: { on in
                 if on { selected.insert(orphan.url) } else { selected.remove(orphan.url) }
+            }
+        )
+    }
+
+    /// A vendor reads as ticked only when every file under it is, so a
+    /// group somebody has picked two files out of can't look like all of
+    /// them are going.
+    private func binding(for group: OrphanGroup) -> Binding<Bool> {
+
+        Binding(
+            get: { group.urls.isSubset(of: selected) },
+            set: { on in
+                if on { selected.formUnion(group.urls) }
+                else { selected.subtract(group.urls) }
             }
         )
     }

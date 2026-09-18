@@ -162,7 +162,7 @@ private struct SidebarFooter: View {
 
                 HStack(spacing: 6) {
 
-                    Text(status.label.uppercased())
+                    Text(status.shortLabel.uppercased())
                         .font(KivoFont.label)
                         .tracking(0.8)
                         .foregroundStyle(Color.kivoDim)

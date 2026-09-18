@@ -31,6 +31,18 @@ enum KivoStatus {
         case .risk: "At risk"
         }
     }
+
+    /// For the sidebar footer, where the full wording was the widest thing
+    /// in the column and set its minimum width on its own. The hero keeps
+    /// the long form, which is where the sentence has room to be a
+    /// sentence.
+    var shortLabel: String {
+        switch self {
+        case .good: "Clear"
+        case .attention: "Attention"
+        case .risk: "At risk"
+        }
+    }
 }
 
 // MARK: - Card label

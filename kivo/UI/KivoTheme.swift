@@ -91,7 +91,12 @@ enum KivoMetrics {
 
     static let navHeight: CGFloat = 46
     static let minTileWidth: CGFloat = 178
-    static let sidebarWidth: CGFloat = 272
+    /// Measured, not chosen. The footer's status line used to be the
+    /// widest thing here at 174pt and set the column's minimum on its own;
+    /// with the short wording the floor is the "Removed Items" row at
+    /// 137pt, and 156 gives that room without the column taking space the
+    /// content has no use for.
+    static let sidebarWidth: CGFloat = 156
 }
 
 // MARK: - Typography

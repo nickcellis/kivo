@@ -25,13 +25,16 @@ struct ContentView: View {
                 status: status,
                 volume: store.volume
             )
-            .navigationSplitViewColumnWidth(
-                min: 244,
-                ideal: KivoMetrics.sidebarWidth,
-                max: 340
-            )
             // The automatic toggle always sorts ahead of our own items.
             .toolbar(removing: .sidebarToggle)
+            // Outermost: the column width has to be the last thing applied
+            // to the sidebar view, or a modifier wrapping it swallows the
+            // preference and the column falls back to AppKit's minimum.
+            .navigationSplitViewColumnWidth(
+                min: 144,
+                ideal: KivoMetrics.sidebarWidth,
+                max: 320
+            )
 
         } detail: {
 

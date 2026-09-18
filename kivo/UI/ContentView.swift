@@ -243,6 +243,7 @@ struct HeroCard: View {
     var onOpen: (SidebarSection) -> Void = { _ in }
 
     @State private var showClean = false
+    @State private var showReview = false
 
     private var isScanning: Bool { store.phase.isScanning }
 
@@ -304,6 +305,16 @@ struct HeroCard: View {
                         .keyboardShortcut("r", modifiers: .command)
                         .help("Scan this Mac (⌘R)")
 
+                        if config.offersReview {
+
+                            KivoSecondaryButton(
+                                title: "Review",
+                                icon: "checklist"
+                            ) {
+                                showReview = true
+                            }
+                        }
+
                         if config.offersClean {
 
                             KivoSecondaryButton(
@@ -330,6 +341,9 @@ struct HeroCard: View {
         .accessibilityLabel(config.headline)
         .sheet(isPresented: $showClean) {
             CleanSheet(store: store)
+        }
+        .sheet(isPresented: $showReview) {
+            OrphanSheet(store: store)
         }
     }
 

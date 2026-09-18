@@ -10,6 +10,7 @@ enum ScanScope: String, CaseIterable, Hashable {
     case cleanable
     case applications
     case largeFiles
+    case orphans
 
     static let everything = Set(ScanScope.allCases)
 
@@ -19,6 +20,7 @@ enum ScanScope: String, CaseIterable, Hashable {
         case .cleanable: "Measuring caches and logs"
         case .applications: "Checking applications"
         case .largeFiles: "Looking for large files"
+        case .orphans: "Checking for leftovers"
         }
     }
 
@@ -30,6 +32,7 @@ enum ScanScope: String, CaseIterable, Hashable {
         case .cleanable: 0.34
         case .applications: 0.24
         case .largeFiles: 0.40
+        case .orphans: 0.22
         }
     }
 }
@@ -58,6 +61,7 @@ private enum ScanTask: Equatable {
     case category(CleanCategory.Kind)
     case applications
     case largeFiles
+    case orphans
 
     var id: String {
         switch self {
@@ -65,6 +69,7 @@ private enum ScanTask: Equatable {
         case .category(let kind): "category.\(kind.rawValue)"
         case .applications: "applications"
         case .largeFiles: "largeFiles"
+        case .orphans: "orphans"
         }
     }
 
@@ -74,6 +79,7 @@ private enum ScanTask: Equatable {
         case .category(let kind): "Measuring \(kind.title.lowercased())"
         case .applications: "Checking applications"
         case .largeFiles: "Looking for large files"
+        case .orphans: "Checking for leftovers"
         }
     }
 
@@ -83,6 +89,7 @@ private enum ScanTask: Equatable {
         case .category(let kind): kind.icon
         case .applications: "square.stack.3d.up"
         case .largeFiles: "doc"
+        case .orphans: "shippingbox"
         }
     }
 
@@ -98,6 +105,7 @@ private enum ScanTask: Equatable {
             }
         case .applications: 0.24
         case .largeFiles: 0.40
+        case .orphans: 0.22
         }
     }
 }
@@ -132,6 +140,9 @@ final class ScanStore: ObservableObject {
     @Published private(set) var categories: [CleanCategory] = []
     @Published private(set) var largeFiles: [LargeFile] = []
     @Published private(set) var apps: [InstalledApp] = []
+
+    /// Support files whose app is gone. Never acted on without review.
+    @Published private(set) var orphans: [Orphan] = []
 
     /// Which parts have real figures behind them. A page that hasn't been
     /// scanned shows a dash rather than borrowing another page's freshness.
@@ -210,6 +221,10 @@ final class ScanStore: ObservableObject {
 
     var appsBytes: Int64 {
         apps.reduce(0) { $0 + $1.size }
+    }
+
+    var orphanBytes: Int64 {
+        orphans.reduce(0) { $0 + $1.size }
     }
 
     /// Apps nobody has opened in months, largest first. The uninstaller's
@@ -408,6 +423,7 @@ final class ScanStore: ObservableObject {
         }
 
         if scopes.contains(.applications) { tasks.append(.applications) }
+        if scopes.contains(.orphans) { tasks.append(.orphans) }
         if scopes.contains(.largeFiles) { tasks.append(.largeFiles) }
 
         return tasks
@@ -446,6 +462,11 @@ final class ScanStore: ObservableObject {
         case .applications:
             apps = await Self.offMain {
                 SystemScanner.installedApps { Task.isCancelled }
+            }
+
+        case .orphans:
+            orphans = await Self.offMain {
+                OrphanFinder.find { Task.isCancelled }
             }
 
         case .largeFiles:
@@ -568,6 +589,55 @@ final class ScanStore: ObservableObject {
     func purgeAll() {
         try? quarantine.purgeAll()
         loadQuarantine()
+    }
+
+    /// Leftovers go to quarantine like everything else, so a wrong guess
+    /// by the finder costs a click to undo rather than a lost file.
+    func removeOrphans(_ urls: Set<URL>) {
+
+        guard !isCleaning, !urls.isEmpty else { return }
+
+        isCleaning = true
+        cleanProgress = 0
+        lastCleanMode = .quarantine
+
+        let sizes = Dictionary(
+            uniqueKeysWithValues: orphans.map { ($0.url, $0.size) }
+        )
+        let labels = Dictionary(
+            uniqueKeysWithValues: orphans.map { ($0.url, $0.identifier) }
+        )
+
+        task?.cancel()
+
+        task = Task { [weak self] in
+
+            guard let self else { return }
+
+            var result = CleanResult()
+
+            for (index, url) in urls.enumerated() {
+
+                if Task.isCancelled { break }
+
+                await self.setCleanProgress(Double(index) / Double(urls.count))
+
+                do {
+                    try Quarantine.shared.store(
+                        url,
+                        label: labels[url] ?? "Leftover",
+                        size: sizes[url] ?? 0
+                    )
+                    result.removed += 1
+                    result.bytes += sizes[url] ?? 0
+                } catch {
+                    result.failed += 1
+                }
+            }
+
+            await self.finishCleaning(result)
+            self.scan([.disk, .orphans])
+        }
     }
 
     // MARK: Uninstalling

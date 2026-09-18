@@ -17,7 +17,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		0106C1D3305D2708007CA0B1 /* kivo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = kivo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0106C1D3305D2708007CA0B1 /* kivo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = kivo.app; path = Kivo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0106C1E3305D2709007CA0B1 /* kivoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = kivoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -324,14 +324,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = kivo/kivo.entitlements;
-				INFOPLIST_KEY_CFBundleDisplayName = Kivo;
-				INFOPLIST_KEY_CFBundleName = Kivo;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = HHHAPHWV9Z;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Kivo;
+				INFOPLIST_KEY_CFBundleName = Kivo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -353,14 +353,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = kivo/kivo.entitlements;
-				INFOPLIST_KEY_CFBundleDisplayName = Kivo;
-				INFOPLIST_KEY_CFBundleName = Kivo;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = HHHAPHWV9Z;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Kivo;
+				INFOPLIST_KEY_CFBundleName = Kivo;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

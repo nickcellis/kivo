@@ -53,6 +53,10 @@ struct SectionPageConfig {
     /// so removal has one home rather than a button on every screen.
     var offersClean: Bool = false
 
+    /// The same idea for leftovers, whose review sheet is a different one
+    /// because nothing in it starts selected.
+    var offersReview: Bool = false
+
     let scope: [SectionScope]
     let scopeState: String
 
@@ -80,6 +84,7 @@ extension SidebarSection {
         case .quarantine: "Put removed things back"
         case .overview: "See the whole Mac at once"
         case .clean: "Caches, logs and the Trash"
+        case .leftovers: "Files from apps you removed"
         case .applications: "What's installed, by size"
         case .storage: "How the disk is filled"
         case .largeFiles: "Files over 1 GB"
@@ -93,6 +98,7 @@ extension SidebarSection {
         case .quarantine: "tray.full.fill"
         case .overview: "square.grid.2x2.fill"
         case .clean: "sparkles"
+        case .leftovers: "shippingbox.fill"
         case .applications: "square.stack.3d.up.fill"
         case .storage: "internaldrive.fill"
         case .largeFiles: "doc.fill"
@@ -315,6 +321,96 @@ extension SectionPageConfig {
                     )
                 ),
                 sideActions: [.storage, .largeFiles, .applications]
+            )
+
+        case .leftovers:
+
+            let scanned = store.has(.orphans)
+            let biggest = store.orphans.prefix(3)
+
+            return SectionPageConfig(
+                headline: scanned
+                    ? (store.orphans.isEmpty
+                        ? "Nothing left behind"
+                        : "\(store.orphanBytes.byteLabel) from apps you no longer have")
+                    : "Ready when you are",
+                subline: scanned
+                    ? "\(store.orphans.count) folder\(store.orphans.count == 1 ? "" : "s") name an app that isn't installed. Check the list before removing any."
+                    : "A scan looks for support files whose app has gone.",
+                primaryTitle: scanned ? "Scan Again" : "Find Leftovers",
+                primaryIcon: "shippingbox.fill",
+                scanScopes: [.orphans],
+                offersReview: scanned && !store.orphans.isEmpty,
+                scope: [
+                    .init(
+                        icon: "shippingbox",
+                        title: "Found",
+                        state: count(.orphans, store.orphans.count, "folder")
+                    ),
+                    .init(
+                        icon: "internaldrive",
+                        title: "Total",
+                        state: value(.orphans, store.orphanBytes.byteLabel)
+                    ),
+                    .init(
+                        icon: "arrow.up.doc",
+                        title: "Largest",
+                        state: value(.orphans, store.orphans.first?.size.byteLabel ?? dash)
+                    )
+                ],
+                scopeState: dash,
+                metricLabel: "Leftovers",
+                metricValue: value(.orphans, store.orphanBytes.byteLabel),
+                info: """
+                    Kivo reads the name of each folder in your Library and \
+                    asks macOS whether an app with that identifier is \
+                    installed anywhere. Only reverse-DNS names are \
+                    considered, Apple's own are never listed, and a folder \
+                    is left alone if any app from the same vendor is still \
+                    installed. Even so these are guesses, so nothing is \
+                    selected for you and everything removed can be put back.
+                    """,
+                tiles: scanned && !biggest.isEmpty
+                    ? biggest.map { orphan in
+                        SectionTile(
+                            icon: "shippingbox.fill",
+                            title: orphan.identifier,
+                            value: orphan.size.byteLabel,
+                            detail: orphan.kind.lowercased(),
+                            pillText: "No app",
+                            pillTint: .kivoWarn
+                        )
+                    }
+                    : [
+                        .init(icon: "shippingbox.fill", title: "Leftovers",
+                              value: dash, detail: "not scanned yet"),
+                        .init(icon: "internaldrive", title: "Reclaimable",
+                              value: dash, detail: "not scanned yet"),
+                        .init(icon: "arrow.up.doc", title: "Largest",
+                              value: dash, detail: "not scanned yet")
+                    ],
+                listTitle: "Every leftover found",
+                listRows: store.orphans.prefix(14).map { orphan in
+                    ActivityRow.Model(
+                        icon: "shippingbox",
+                        fileURL: orphan.url,
+                        title: orphan.identifier,
+                        badge: orphan.kind,
+                        detail: orphan.shortPath,
+                        value: orphan.size.byteLabel,
+                        sortValue: orphan.size
+                    )
+                }.emptyFallback(
+                    .init(
+                        icon: "shippingbox",
+                        title: "Leftovers",
+                        detail: scanned
+                            ? "Every folder here belongs to an app you still have"
+                            : "Scan to look for files from apps you removed",
+                        value: dash
+                    )
+                ),
+                sideActions: [.applications, .clean, .quarantine]
             )
 
         case .applications:

@@ -195,6 +195,26 @@ final class ScanStore: ObservableObject {
     var currentStep: ScanStep? { steps.first { $0.state == .running } }
     var stepsDone: Int { steps.filter { $0.state == .done }.count }
 
+    #if DEBUG
+    /// Fills the store with a fictional Mac, for the README's pictures.
+    /// See DemoData: it exists so the screenshots aren't of somebody's
+    /// real disk. Debug only.
+    func loadDemo() {
+
+        volume = DemoData.volume
+        categories = DemoData.categories
+        apps = DemoData.apps
+        orphans = DemoData.orphans
+        largeFiles = DemoData.largeFiles
+        duplicates = DemoData.duplicates
+        quarantined = DemoData.quarantined
+        measured = [.disk, .cleanable, .applications, .largeFiles, .orphans, .duplicates]
+        lastScan = Calendar.current.date(byAdding: .minute, value: -8, to: .now)
+        scanCount = 12
+        phase = .finished
+    }
+    #endif
+
     func has(_ scope: ScanScope) -> Bool { measured.contains(scope) }
 
     func has(_ scopes: Set<ScanScope>) -> Bool {

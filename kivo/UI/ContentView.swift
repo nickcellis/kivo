@@ -70,7 +70,23 @@ struct ContentView: View {
             idealHeight: 660
         )
         .preferredColorScheme(appearance.colorScheme)
-        .onAppear { store.restore() }
+        .onAppear {
+            #if DEBUG
+            // Screenshots, and only when the environment asks: see
+            // DemoMode. It has to come before restore() and instead of
+            // it, or the saved scan lands on top of the demo data and the
+            // picture is of a real disk. That is exactly what the first
+            // attempt published.
+            if let demo = DemoMode.section {
+                store.loadDemo()
+                selectedSection = demo
+                DemoMode.captureWhenReady()
+                return
+            }
+            #endif
+
+            store.restore()
+        }
     }
 
     private func open(_ section: SidebarSection) {

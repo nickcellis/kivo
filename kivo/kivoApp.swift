@@ -1,36 +1,12 @@
 //
 //  kivoApp.swift
-//  kivo
-//
-//  Created by Thawatchai Chumsook on 18/09/2026.
+//  Kivo
 //
 
 import SwiftUI
-import SwiftData
 
 @main
 struct kivoApp: App {
-
-    var sharedModelContainer: ModelContainer = {
-
-        let schema = Schema([
-            Item.self,
-        ])
-
-        let modelConfiguration = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false
-        )
-
-        do {
-            return try ModelContainer(
-                for: schema,
-                configurations: [modelConfiguration]
-            )
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
 
     var body: some Scene {
 
@@ -47,7 +23,6 @@ struct kivoApp: App {
         // sidebar nor the near-black page.
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentMinSize)
-        .modelContainer(sharedModelContainer)
 
         // Declaring this scene is what adds Kivo ▸ Settings… (⌘,) to the
         // app menu — the native home for settings on macOS, and the reason

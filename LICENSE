@@ -1,0 +1,35 @@
+Kivo License
+Copyright (c) 2026 NickCEllis
+
+Permission is granted, free of charge, to any person obtaining a copy of
+this software and its source code (the "Software"), to use it, to study
+it, and to modify it, subject to the conditions below.
+
+1. Attribution.
+
+   Any redistribution of the Software, in source or binary form, modified
+   or unmodified, and including any public fork of this repository, must
+   keep this notice intact and must credit the Kivo project by name, with
+   a link to https://github.com/NickCEllis/kivo, somewhere a person will
+   actually see it: an About window, a README, or a documentation page.
+
+2. No misrepresentation.
+
+   You may not present the Software, or any work derived from it, as your
+   own original work. You may not use the name "Kivo" or the Kivo icon for
+   a derived work in a way that suggests it is the original project or is
+   endorsed by its author.
+
+3. No warranty.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+   IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
+
+   Kivo removes files. It moves them somewhere recoverable first, and it
+   is tested, but it is still a program that removes files from your
+   computer, and clause 3 is not decoration. Keep backups.

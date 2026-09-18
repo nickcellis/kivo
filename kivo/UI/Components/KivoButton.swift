@@ -1,8 +1,6 @@
 //
 //  KivoButton.swift
-//  kivo
-//
-//  Created by Thawatchai Chumsook on 18/09/2026.
+//  Kivo
 //
 
 import SwiftUI

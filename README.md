@@ -65,9 +65,12 @@ stating plainly.
 
 ## Install
 
-Download the latest `Kivo.zip` from
-[Releases](https://github.com/NickCEllis/kivo/releases), unzip it, and drag
-Kivo to your Applications folder.
+Download the latest `Kivo.dmg` from
+[Releases](https://github.com/NickCEllis/kivo/releases), open it, and drag
+Kivo to the Applications folder beside it.
+
+It runs on **macOS 14 Sonoma or later**, on both Apple Silicon and Intel
+Macs — the binary is universal.
 
 The first launch is blocked, because the app carries no distribution
 certificate: it is signed ad-hoc, which means macOS can confirm nobody has

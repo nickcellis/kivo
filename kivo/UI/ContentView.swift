@@ -109,6 +109,12 @@ struct PageView: View {
 
     @State private var uninstalling: InstalledApp?
 
+    /// The disk figure is the subject of these two pages and background
+    /// noise on the other eight.
+    private var showsDisk: Bool {
+        section == .overview || section == .storage
+    }
+
     private var config: SectionPageConfig {
         .config(for: section, store: store) { app in
             uninstalling = app
@@ -129,34 +135,30 @@ struct PageView: View {
         }
     }
 
+    /// Title, then what the page is, then when it was measured.
+    ///
+    /// This used to be two rows: an eyebrow naming the section and, under
+    /// it, a heading naming the section again. Every page but the
+    /// dashboard opened by saying its own name twice.
     private var header: some View {
 
-        VStack(alignment: .leading, spacing: 10) {
+        HStack(alignment: .lastTextBaseline, spacing: 12) {
 
-            HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
 
-                Image(systemName: section.icon)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.kivoDim)
-
-                Text(section.title)
-                    .font(.system(size: 13, weight: .medium))
+                Text(section == .overview ? greeting : section.title)
+                    .font(KivoFont.pageTitle)
                     .foregroundStyle(Color.kivoText)
 
                 Text(section.subtitle)
                     .font(KivoFont.body)
                     .foregroundStyle(Color.kivoDim)
                     .lineLimit(1)
-
-                Spacer(minLength: 12)
-
-                headerStamp
             }
 
-            Text(section == .overview ? greeting : section.title)
-                .font(KivoFont.pageTitle)
-                .foregroundStyle(Color.kivoText)
+            Spacer(minLength: 12)
 
+            headerStamp
         }
         .padding(.bottom, 4)
         .accessibilityAddTraits(.isHeader)
@@ -241,21 +243,35 @@ struct PageView: View {
                             config: config,
                             status: status,
                             store: store,
+                            matchesDisk: showsDisk,
                             onOpen: onOpen
                         )
 
-                        DiskCard(store: store)
-                            .frame(width: 236)
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
+                        // Only where the disk is the subject. It used to
+                        // ride along on all ten pages, repeating the free
+                        // space, the percentage and the capacity that the
+                        // sidebar already shows at all times.
+                        if showsDisk {
 
-                    HStack(alignment: .top, spacing: KivoMetrics.gridSpacing) {
-
-                        ForEach(config.tiles) { tile in
-                            MetricCard(tile: tile)
+                            DiskCard(store: store)
+                                .frame(width: 236)
                         }
                     }
                     .fixedSize(horizontal: false, vertical: true)
+
+                    // A page is allowed to have none: an empty row still
+                    // costs a gap in the stack, which reads as something
+                    // failing to load.
+                    if !config.tiles.isEmpty {
+
+                        HStack(alignment: .top, spacing: KivoMetrics.gridSpacing) {
+
+                            ForEach(config.tiles) { tile in
+                                MetricCard(tile: tile)
+                            }
+                        }
+                        .fixedSize(horizontal: false, vertical: true)
+                    }
 
                     // Takes the slack instead of a trailing spacer, so a tall
                     // window grows the list rather than the empty space under it.
@@ -282,6 +298,13 @@ struct HeroCard: View {
     let config: SectionPageConfig
     let status: KivoStatus
     @ObservedObject var store: ScanStore
+
+    /// Stretch to the disk card's height when there is one beside it, and
+    /// otherwise hug the content. Without this the hero kept the height it
+    /// needed back when it carried a breakdown strip, and pages that no
+    /// longer have one opened with a tall empty box.
+    var matchesDisk: Bool = false
+
     var onOpen: (SidebarSection) -> Void = { _ in }
 
     @State private var showClean = false
@@ -300,7 +323,7 @@ struct HeroCard: View {
         KivoCard(
             padding: 14,
             accent: isScanning ? .kivoAccent : nil,
-            fillsHeight: true
+            fillsHeight: matchesDisk
         ) {
 
             VStack(alignment: .leading, spacing: 10) {
@@ -311,9 +334,12 @@ struct HeroCard: View {
 
                 } else {
 
+                    // Only when it isn't good news. "ALL CLEAR" on every
+                    // page of a healthy Mac is a pill the eye stops
+                    // reading, which is the whole argument against it.
                     KivoCardLabel(
                         text: config.metricLabel,
-                        trailing: status.label,
+                        trailing: status == .good ? nil : status.label,
                         trailingTint: status.tint,
                         info: config.info
                     )
@@ -395,10 +421,10 @@ struct HeroCard: View {
                 }
                 .padding(.top, 2)
 
-                if !isScanning {
-                    Divider().overlay(Color.kivoBorder)
-                    scope
-                }
+                // The breakdown that used to sit here, under a divider,
+                // is the row of cards below the hero: on Storage and
+                // Activity it was the same three figures twice, a few
+                // millimetres apart in two different type sizes.
             }
         }
         .accessibilityElement(children: .contain)
@@ -518,40 +544,14 @@ struct HeroCard: View {
         return config.subline
     }
 
-    private var scope: some View {
-
-        HStack(spacing: 0) {
-
-            ForEach(Array(config.scope.enumerated()), id: \.element.id) { index, item in
-
-                if index > 0 {
-                    Divider().frame(height: 22).overlay(Color.kivoBorder)
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-
-                    Text(item.title)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(Color.kivoDim)
-                        .lineLimit(1)
-
-                    Text(isScanning ? "···" : (item.state ?? config.scopeState))
-                        .font(KivoFont.mono)
-                        .foregroundStyle(Color.kivoText)
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, index > 0 ? 10 : 0)
-                .accessibilityElement(children: .combine)
-            }
-        }
-    }
 }
 
 // MARK: - Disk
 
-/// The one card that's on every screen: the disk is the context for
-/// everything else Kivo reports.
+/// The volume, broken into what's used, what Kivo could clear and what
+/// the disk holds. On the dashboard and the Storage page only: everywhere
+/// else the sidebar's own free-space line is the context, and this card
+/// repeated it.
 struct DiskCard: View {
 
     @ObservedObject var store: ScanStore

@@ -486,6 +486,19 @@ extension Int64 {
     /// Decimal units, matching what Finder and About This Mac report — the
     /// numbers the user can check Kivo against.
     var byteLabel: String {
-        ByteCountFormatter.string(fromByteCount: self, countStyle: .file)
+        Self.formatter.string(fromByteCount: self)
     }
+
+    /// Held rather than made per call, and with the spelled-out zero
+    /// turned off: ByteCountFormatter says "Zero KB" by default, which
+    /// arrived as a display-size headline on the Activity page and reads
+    /// like a fault rather than a count.
+    private static let formatter: ByteCountFormatter = {
+
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        formatter.allowsNonnumericFormatting = false
+
+        return formatter
+    }()
 }

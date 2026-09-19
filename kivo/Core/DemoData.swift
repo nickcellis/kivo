@@ -206,20 +206,60 @@ enum DemoMode {
         // makes every screenshot look like a disabled app.
         NSApp.activate(ignoringOtherApps: true)
 
-        // Long enough for the page transition and the app icons to land.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+        // Wait for a window rather than guessing at a delay. A fixed
+        // 1.6 seconds was enough on a warm launch and not enough on the
+        // first run of a fresh build, where macOS validates the signature
+        // first: the capture found no window and quit, silently, which
+        // read as "the script is broken".
+        attempt(0, writingTo: path)
+    }
 
-            guard let window = NSApp.windows.first(where: \.isVisible),
-                  let view = window.contentView,
-                  let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)
-            else { exit(1) }
+    private static func attempt(_ count: Int, writingTo path: String) {
 
-            view.cacheDisplay(in: view.bounds, to: rep)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
 
-            try? rep.representation(using: .png, properties: [:])?
-                .write(to: URL(fileURLWithPath: path))
+            // Not "isVisible": a window launched from a script can be laid
+            // out and sized while still ordered out, and waiting for it to
+            // become visible waits forever. What matters is that it exists
+            // and has been given a size.
+            let ready = NSApp.windows.first {
+                $0.contentView.map { view in
+                    view.bounds.width > 200 && view.bounds.height > 200
+                } == true
+            }
 
-            exit(0)
+            guard let window = ready, let view = window.contentView else {
+
+                // 20 seconds, then give up loudly rather than hang a build.
+                guard count < 50 else {
+                    FileHandle.standardError.write(
+                        Data("kivo: no window to capture\n".utf8)
+                    )
+                    exit(1)
+                }
+
+                return attempt(count + 1, writingTo: path)
+            }
+
+            // One size for every screenshot, whatever frame the last
+            // session left behind, so the README's pictures line up
+            // instead of each being whatever the window happened to be.
+            window.setContentSize(NSSize(width: 1180, height: 760))
+            window.makeKeyAndOrderFront(nil)
+
+            // One more beat, for the page transition and the app icons.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+
+                guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)
+                else { exit(1) }
+
+                view.cacheDisplay(in: view.bounds, to: rep)
+
+                try? rep.representation(using: .png, properties: [:])?
+                    .write(to: URL(fileURLWithPath: path))
+
+                exit(0)
+            }
         }
     }
 }

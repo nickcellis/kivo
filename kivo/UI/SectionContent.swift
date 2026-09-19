@@ -198,17 +198,18 @@ extension SectionPageConfig {
                     home folder. It only reads. Kivo cannot delete anything yet.
                     """,
                 tiles: [
+                    // Not Storage: the disk card sits beside this row and
+                    // already gives used, cleanable and capacity. This
+                    // slot goes to a page that otherwise has no presence
+                    // on the dashboard at all.
                     .init(
-                        icon: "internaldrive.fill",
-                        title: "Storage",
-                        value: store.volume?.used.byteLabel ?? dash,
-                        detail: store.volume.map { "of \($0.total.byteLabel) used" }
-                            ?? "startup disk",
-                        pillText: store.volume.map { "\(Int($0.fraction * 100))% full" },
-                        pillTint: quietUnlessBusy(store.volume?.fraction),
-                        fraction: store.volume?.fraction,
-                        barTint: quietUnlessBusy(store.volume?.fraction),
-                        info: diskInfo
+                        icon: "shippingbox.fill",
+                        title: "Leftovers",
+                        value: value(.orphans, store.orphanBytes.byteLabel),
+                        detail: store.has(.orphans)
+                            ? count(.orphans, store.orphans.count, "folder") + " from apps you removed"
+                            : "not measured yet",
+                        info: "Support files whose app Kivo can't find anywhere on this Mac."
                     ),
                     // Not "safe to clean" again: the hero above already
                     // leads with that figure, and a card repeating it is a
@@ -626,36 +627,12 @@ extension SectionPageConfig {
                 metricLabel: "Used",
                 metricValue: volume?.used.byteLabel ?? dash,
                 info: diskInfo,
-                tiles: [
-                    .init(
-                        icon: "internaldrive.fill",
-                        title: "Used",
-                        value: volume?.used.byteLabel ?? dash,
-                        detail: volume.map { "of \($0.total.byteLabel)" } ?? "capacity",
-                        pillText: volume.map { "\(Int($0.fraction * 100))% full" },
-                        pillTint: diskTint(volume?.fraction),
-                        fraction: volume?.fraction,
-                        barTint: diskTint(volume?.fraction)
-                    ),
-                    .init(
-                        icon: "externaldrive",
-                        title: "Free",
-                        value: volume?.free.byteLabel ?? dash,
-                        detail: "available now",
-                        pillText: volume == nil ? nil : "Live",
-                        pillTint: .kivoGood,
-                        info: diskInfo
-                    ),
-                    .init(
-                        icon: "square.stack.3d.up.fill",
-                        title: "Applications",
-                        value: value(.applications, store.appsBytes.byteLabel),
-                        detail: store.has(.applications)
-                            ? count(.applications, store.apps.count, "app") + " installed"
-                            : "scan Applications to measure",
-                        info: "Measured on the Applications page. A disk scan leaves it alone, since sizing every bundle takes far longer than reading the volume."
-                    )
-                ],
+                // No tiles. The headline is Used, the card beside it
+                // breaks the same volume into used, cleanable and
+                // capacity, and a row of Used / Free / Applications under
+                // both said all of it a third time. What the page was
+                // missing is underneath: where the space actually went.
+                tiles: [],
                 listTitle: "Biggest contributors",
                 listRows: [
                     .init(

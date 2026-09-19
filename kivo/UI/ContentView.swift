@@ -80,6 +80,7 @@ struct ContentView: View {
             if let demo = DemoMode.section {
                 store.loadDemo()
                 selectedSection = demo
+                if DemoMode.showsTrace { store.trace = DemoData.trace }
                 DemoMode.captureWhenReady()
                 return
             }
@@ -287,6 +288,13 @@ struct PageView: View {
         }
         .sheet(item: $uninstalling) { app in
             UninstallSheet(app: app, store: store)
+        }
+        // Raised by the store when a finished uninstall turns up more of
+        // the same vendor's files. It arrives on its own because it is an
+        // answer to something the user did seconds ago; a banner they can
+        // walk away from would be a report nobody reads.
+        .sheet(item: $store.trace) { trace in
+            TraceSheet(trace: trace, store: store)
         }
     }
 }

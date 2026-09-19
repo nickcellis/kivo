@@ -118,6 +118,20 @@ private enum ScanTask: Equatable {
     }
 }
 
+/// What an uninstall left behind, found by looking again once it was done.
+struct UninstallTrace: Equatable, Identifiable {
+
+    let app: String
+    let vendor: String
+    let items: [Orphan]
+
+    /// The vendor is enough: only one uninstall can be in flight, and a
+    /// second one replaces the sheet rather than stacking on it.
+    var id: String { vendor }
+
+    var bytes: Int64 { items.reduce(0) { $0 + $1.size } }
+}
+
 /// Everything the UI knows about this Mac. One store, read by every page,
 /// so two screens can't disagree about what's on the disk.
 @MainActor
@@ -174,6 +188,11 @@ final class ScanStore: ObservableObject {
     @Published var showsCleanResult = false
 
     /// What Kivo is holding rather than deleting.
+    /// Set when a finished uninstall turns up more of the same vendor's
+    /// files. Nothing acts on it: the sheet it raises is a review, like
+    /// every other list Kivo infers rather than knows.
+    @Published var trace: UninstallTrace?
+
     @Published private(set) var quarantined: [QuarantineEntry] = []
 
     private let quarantine = Quarantine.shared
@@ -653,22 +672,26 @@ final class ScanStore: ObservableObject {
         loadQuarantine()
     }
 
-    /// Leftovers go to quarantine like everything else, so a wrong guess
-    /// by the finder costs a click to undo rather than a lost file.
-    func removeOrphans(_ urls: Set<URL>) {
+    @MainActor
+    private func setTrace(_ trace: UninstallTrace) {
+        self.trace = trace
+    }
 
-        guard !isCleaning, !urls.isEmpty else { return }
+    /// Moves a set of files to quarantine, reporting progress as it goes.
+    ///
+    /// Shared by the leftovers list and the post-uninstall trace, which
+    /// differ only in where their sizes and labels come from.
+    private func quarantine(
+        _ urls: Set<URL>,
+        sizes: [URL: Int64],
+        labels: [URL: String],
+        fallbackLabel: String,
+        then rescan: @escaping @MainActor () -> Void
+    ) {
 
         isCleaning = true
         cleanProgress = 0
         lastCleanMode = .quarantine
-
-        let sizes = Dictionary(
-            uniqueKeysWithValues: orphans.map { ($0.url, $0.size) }
-        )
-        let labels = Dictionary(
-            uniqueKeysWithValues: orphans.map { ($0.url, $0.identifier) }
-        )
 
         task?.cancel()
 
@@ -687,7 +710,7 @@ final class ScanStore: ObservableObject {
                 do {
                     try Quarantine.shared.store(
                         url,
-                        label: labels[url] ?? "Leftover",
+                        label: labels[url] ?? fallbackLabel,
                         size: sizes[url] ?? 0
                     )
                     result.removed += 1
@@ -698,7 +721,45 @@ final class ScanStore: ObservableObject {
             }
 
             await self.finishCleaning(result)
-            self.scan([.disk, .orphans])
+            await rescan()
+        }
+    }
+
+    /// The traced items go to quarantine by the same path as everything
+    /// else, so putting one back is the same click it always is.
+    func removeTraced(_ urls: Set<URL>) {
+
+        guard let trace, !isCleaning, !urls.isEmpty else { return }
+
+        let sizes = Dictionary(
+            uniqueKeysWithValues: trace.items.map { ($0.url, $0.size) }
+        )
+        let labels = Dictionary(
+            uniqueKeysWithValues: trace.items.map { ($0.url, $0.identifier) }
+        )
+
+        self.trace = nil
+
+        quarantine(urls, sizes: sizes, labels: labels, fallbackLabel: "Leftover") {
+            [weak self] in self?.scan([.disk, .orphans])
+        }
+    }
+
+    /// Leftovers go to quarantine like everything else, so a wrong guess
+    /// by the finder costs a click to undo rather than a lost file.
+    func removeOrphans(_ urls: Set<URL>) {
+
+        guard !isCleaning, !urls.isEmpty else { return }
+
+        let sizes = Dictionary(
+            uniqueKeysWithValues: orphans.map { ($0.url, $0.size) }
+        )
+        let labels = Dictionary(
+            uniqueKeysWithValues: orphans.map { ($0.url, $0.identifier) }
+        )
+
+        quarantine(urls, sizes: sizes, labels: labels, fallbackLabel: "Leftover") {
+            [weak self] in self?.scan([.disk, .orphans])
         }
     }
 
@@ -828,6 +889,11 @@ final class ScanStore: ObservableObject {
         cleanProgress = 0
 
         let label = plan.app.name
+
+        // Read now: once the bundle is in quarantine there is no plist
+        // left to ask, and the trace afterwards needs the identifier.
+        let bundleID = plan.bundleID ?? plan.app.bundleID
+
         let sizes = Dictionary(
             uniqueKeysWithValues: plan.leftovers.map { ($0.url, $0.size) }
         )
@@ -860,6 +926,26 @@ final class ScanStore: ObservableObject {
             }
 
             await self.finishCleaning(result)
+
+            // Now that the app is gone, look again. Before it went, its
+            // own identifier was the only safe thing to match on; now
+            // nothing answers to it, so anything of the vendor's that
+            // still has no owner is worth showing.
+            if let id = bundleID {
+
+                let vendor = OrphanFinder.vendor(of: id)
+
+                let left = await Self.offMain {
+                    OrphanFinder.trace(vendor: vendor) { Task.isCancelled }
+                }
+
+                if !left.isEmpty {
+                    await self.setTrace(
+                        UninstallTrace(app: label, vendor: vendor, items: left)
+                    )
+                }
+            }
+
             self.scan([.disk, .applications])
         }
     }

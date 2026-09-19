@@ -99,6 +99,27 @@ enum DemoData {
         held("Caches", "Library/Caches", 11_240_833_024, days: 6)
     ]
 
+    /// For screenshotting the post-uninstall trace, which otherwise only
+    /// appears in the seconds after removing a real app.
+    static let trace = UninstallTrace(
+        app: "Brightsail Studio",
+        vendor: "com.brightsail",
+        items: [
+            orphan("com.brightsail.studio", "Support files",
+                   "Library/Application Support/com.brightsail.studio",
+                   141_557_760, days: 0),
+            orphan("com.brightsail.studio.helper", "Container",
+                   "Library/Containers/com.brightsail.studio.helper",
+                   2_097_152, days: 0),
+            orphan("com.brightsail.updater", "Container",
+                   "Library/Containers/com.brightsail.updater", 819_200, days: 12),
+            orphan("com.brightsail.studio", "Web storage",
+                   "Library/HTTPStorages/com.brightsail.studio", 147_456, days: 0),
+            orphan("com.brightsail.studio", "Preferences",
+                   "Library/Preferences/com.brightsail.studio.plist", 24_576, days: 0)
+        ]
+    )
+
     // MARK: Builders
 
     private static var home: URL {
@@ -193,7 +214,15 @@ enum DemoMode {
             return nil
         }
 
+        // "trace" isn't a page; it's the sheet an uninstall raises, shown
+        // over the page it would have been raised from.
+        if raw == "trace" { return .applications }
+
         return SidebarSection(rawValue: raw)
+    }
+
+    static var showsTrace: Bool {
+        ProcessInfo.processInfo.environment["KIVO_DEMO"] == "trace"
     }
 
     static func captureWhenReady() {
@@ -222,11 +251,17 @@ enum DemoMode {
             // out and sized while still ordered out, and waiting for it to
             // become visible waits forever. What matters is that it exists
             // and has been given a size.
-            let ready = NSApp.windows.first {
-                $0.contentView.map { view in
+            func sized(_ window: NSWindow) -> Bool {
+                window.contentView.map { view in
                     view.bounds.width > 200 && view.bounds.height > 200
                 } == true
             }
+
+            // A sheet is its own window on macOS, so capturing the main
+            // window's content view photographs the page behind it and
+            // misses the thing being reviewed entirely.
+            let sheet = NSApp.windows.first { $0.isSheet && sized($0) }
+            let ready = sheet ?? (showsTrace ? nil : NSApp.windows.first(where: sized))
 
             guard let window = ready, let view = window.contentView else {
 
@@ -244,16 +279,22 @@ enum DemoMode {
             // One size for every screenshot, whatever frame the last
             // session left behind, so the README's pictures line up
             // instead of each being whatever the window happened to be.
-            let size = ProcessInfo.processInfo.environment["KIVO_SHOT_SIZE"]?
+            // A sheet sizes itself and is left alone.
+            let size = window.isSheet
+                ? nil
+                : ProcessInfo.processInfo.environment["KIVO_SHOT_SIZE"]?
                 .split(separator: "x")
                 .compactMap { Double($0) }
 
-            window.setContentSize(
-                size?.count == 2
-                    ? NSSize(width: size![0], height: size![1])
-                    : NSSize(width: 1180, height: 760)
-            )
-            window.makeKeyAndOrderFront(nil)
+            if !window.isSheet {
+
+                window.setContentSize(
+                    size?.count == 2
+                        ? NSSize(width: size![0], height: size![1])
+                        : NSSize(width: 1180, height: 760)
+                )
+                window.makeKeyAndOrderFront(nil)
+            }
 
             // One more beat, for the page transition and the app icons.
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {

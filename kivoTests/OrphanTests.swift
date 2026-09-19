@@ -186,6 +186,51 @@ struct OrphanTests {
         #expect(group.modified == recent)
     }
 
+    @Test("A trace after an uninstall spares the vendor's other apps")
+    func traceSparesSiblings() throws {
+
+        let fm = FileManager.default
+        let home = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appending(path: "kivo-trace-\(UUID().uuidString)")
+
+        defer { try? fm.removeItem(at: home) }
+
+        func make(_ path: String) throws {
+            let url = home.appending(path: path)
+            try fm.createDirectory(at: url, withIntermediateDirectories: true)
+        }
+
+        // Opera GX has just been removed. Opera has not.
+        try make("Library/Application Support/com.operasoftware.OperaGX")
+        try make("Library/Containers/com.operasoftware.OperaGX.helper")
+        try make("Library/Application Support/com.operasoftware.Opera")
+        try make("Library/Application Support/com.someoneelse.app")
+        try make("Library/Application Support/com.apple.Safari")
+
+        let found = OrphanFinder.trace(
+            vendor: "com.operasoftware",
+            home: home,
+            stillInstalled: { $0 == "com.operasoftware.Opera" }
+        )
+
+        let identifiers = Set(found.map(\.identifier))
+
+        // The removed app and the helper named after it.
+        #expect(identifiers.contains("com.operasoftware.OperaGX"))
+        #expect(identifiers.contains("com.operasoftware.OperaGX.helper"))
+
+        // The vendor rule that protects a leftover elsewhere would be
+        // exactly wrong here: Opera is still installed, so its files stay
+        // even though the vendor matches.
+        #expect(!identifiers.contains("com.operasoftware.Opera"))
+
+        // Another vendor is none of this trace's business, and Apple's is
+        // never anybody's.
+        #expect(!identifiers.contains("com.someoneelse.app"))
+        #expect(!identifiers.contains("com.apple.Safari"))
+        #expect(found.count == 2)
+    }
+
     @Test("An installed app covers the identifiers hung off its own")
     func ancestorsAreProtected() {
 

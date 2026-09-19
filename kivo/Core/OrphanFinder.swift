@@ -314,6 +314,91 @@ enum OrphanFinder {
         return found.sorted { $0.size > $1.size }
     }
 
+    // MARK: Tracing one vendor
+
+    /// What still mentions a vendor after one of its apps has gone.
+    ///
+    /// The uninstaller matches an app's own identifier, which is the right
+    /// rule when the app is still there to be matched against. It misses
+    /// three things, and all three are only visible afterwards: siblings
+    /// under the same vendor whose names don't contain the app's
+    /// ("…menubarstatshelper" beside "…menubarstats"), containers for
+    /// helpers and extensions, which are checked by exact name only, and
+    /// whatever the app wrote while quitting, after the removal list was
+    /// drawn up.
+    ///
+    /// The vendor rule that protects a leftover elsewhere would be exactly
+    /// wrong here: after removing Opera GX, Opera is still installed, so
+    /// "com.operasoftware" is still a live vendor and would shield the
+    /// files of the app just removed. So this asks about each identifier
+    /// on its own — is anything still installed that answers to it — and
+    /// never about the vendor.
+    /// `stillInstalled` is injected so the rule can be tested without
+    /// depending on what happens to be installed on the machine running
+    /// the tests. In the app it is the LaunchServices lookup.
+    static func trace(
+        vendor wanted: String,
+        home: URL? = nil,
+        stillInstalled: (String) -> Bool = { isInstalled($0) },
+        isCancelled: () -> Bool = { false }
+    ) -> [Orphan] {
+
+        let home = home ?? SystemScanner.defaultHome
+        var found: [Orphan] = []
+        var seen: Set<String> = []
+
+        for (path, kind) in locations {
+
+            if isCancelled() { break }
+
+            let folder = home.appending(path: path)
+
+            guard let children = try? fm.contentsOfDirectory(
+                at: folder,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+
+            for child in children {
+
+                if isCancelled() { break }
+
+                guard let id = identifier(from: child.lastPathComponent),
+                      vendor(of: id) == wanted,
+                      !isApple(id),
+                      !seen.contains(child.path),
+                      !stillInstalled(id)
+                else { continue }
+
+                seen.insert(child.path)
+
+                let size = SystemScanner.directoryStats(
+                    at: child,
+                    isCancelled: isCancelled
+                ).size
+
+                let resolved = size > 0
+                    ? size
+                    : Int64((try? child.resourceValues(forKeys: [.totalFileAllocatedSizeKey]))?
+                        .totalFileAllocatedSize ?? 0)
+
+                found.append(
+                    Orphan(
+                        url: child,
+                        identifier: id,
+                        size: resolved,
+                        kind: kind,
+                        modified: (try? child.resourceValues(
+                            forKeys: [.contentModificationDateKey]
+                        ))?.contentModificationDate
+                    )
+                )
+            }
+        }
+
+        return found.sorted { $0.size > $1.size }
+    }
+
     // MARK: Grouping
 
     /// Gathers leftovers by vendor, biggest group first.

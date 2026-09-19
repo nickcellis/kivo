@@ -105,7 +105,12 @@ enum KivoMetrics {
     /// with the short wording the floor is the "Removed Items" row at
     /// 137pt, and 156 gives that room without the column taking space the
     /// content has no use for.
-    static let sidebarWidth: CGFloat = 156
+    /// Measured, not guessed. The ideal width is a request AppKit can
+    /// decline — it drew 244pt at every window size while this constant
+    /// said 156 — so the minimum is what actually holds the column open.
+    /// 260 leaves the longest row, "Removed Items", and the footer's
+    /// disk line clear of both edges instead of pressed against them.
+    static let sidebarWidth: CGFloat = 260
 }
 
 // MARK: - Typography

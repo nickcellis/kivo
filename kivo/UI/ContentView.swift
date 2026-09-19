@@ -34,7 +34,7 @@ struct ContentView: View {
             // to the sidebar view, or a modifier wrapping it swallows the
             // preference and the column falls back to AppKit's minimum.
             .navigationSplitViewColumnWidth(
-                min: 144,
+                min: KivoMetrics.sidebarWidth,
                 ideal: KivoMetrics.sidebarWidth,
                 max: 320
             )

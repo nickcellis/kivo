@@ -188,13 +188,15 @@ private struct SidebarFooter: View {
                 // disk that is 73% full announced itself as 73% clear.
                 // The health is in the colour of the figure and the bar
                 // under it, which is where a one-word verdict belongs.
+                // One phrase, not two halves shoved to opposite edges.
+                // With a Spacer between them the line stretched the full
+                // width of the column and made it feel packed, which is
+                // the opposite of what a quiet footer should do.
                 HStack(spacing: 6) {
 
                     Text("Startup disk")
                         .font(.system(size: 11.5, weight: .medium))
                         .foregroundStyle(Color.kivoDim)
-
-                    Spacer(minLength: 6)
 
                     if let volume {
                         Text("\(Int(volume.fraction * 100))% full")
@@ -203,6 +205,8 @@ private struct SidebarFooter: View {
                                 status == .good ? Color.kivoText : status.tint
                             )
                     }
+
+                    Spacer(minLength: 0)
                 }
 
                 if let volume {

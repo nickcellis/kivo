@@ -244,7 +244,15 @@ enum DemoMode {
             // One size for every screenshot, whatever frame the last
             // session left behind, so the README's pictures line up
             // instead of each being whatever the window happened to be.
-            window.setContentSize(NSSize(width: 1180, height: 760))
+            let size = ProcessInfo.processInfo.environment["KIVO_SHOT_SIZE"]?
+                .split(separator: "x")
+                .compactMap { Double($0) }
+
+            window.setContentSize(
+                size?.count == 2
+                    ? NSSize(width: size![0], height: size![1])
+                    : NSSize(width: 1180, height: 760)
+            )
             window.makeKeyAndOrderFront(nil)
 
             // One more beat, for the page transition and the app icons.

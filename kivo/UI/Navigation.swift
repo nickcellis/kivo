@@ -182,18 +182,26 @@ private struct SidebarFooter: View {
 
             VStack(alignment: .leading, spacing: 5) {
 
+                // Name the thing, then say how full it is. This line used
+                // to read "Clear" beside "73%", because the left half was
+                // a health verdict and the right half was the fill — so a
+                // disk that is 73% full announced itself as 73% clear.
+                // The health is in the colour of the figure and the bar
+                // under it, which is where a one-word verdict belongs.
                 HStack(spacing: 6) {
 
-                    Text(status.shortLabel)
+                    Text("Startup disk")
                         .font(.system(size: 11.5, weight: .medium))
                         .foregroundStyle(Color.kivoDim)
 
                     Spacer(minLength: 6)
 
                     if let volume {
-                        Text("\(Int(volume.fraction * 100))%")
+                        Text("\(Int(volume.fraction * 100))% full")
                             .font(KivoFont.mono)
-                            .foregroundStyle(Color.kivoText)
+                            .foregroundStyle(
+                                status == .good ? Color.kivoText : status.tint
+                            )
                     }
                 }
 

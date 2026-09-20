@@ -105,6 +105,24 @@ first time. The App Sandbox is deliberately off: a sandboxed process cannot
 read `~/Library/Caches`, `~/.Trash` or `/Applications`, so every figure Kivo
 shows would be zero.
 
+## Releasing
+
+`Tools/release.sh` goes from a clean tree to a notarised, stapled disk
+image in one command. It needs a **Developer ID Application** certificate
+(an Apple Development certificate is a different thing and cannot be
+notarised) and notary credentials stored once with `xcrun notarytool
+store-credentials`. The script checks for both before it does anything and
+says exactly what is missing.
+
+The app is signed, notarised and stapled before the image is built around
+it, so a copy dragged out of the image still validates on a Mac that is
+offline the first time it runs; then the image itself is signed, notarised
+and stapled, so the download passes Gatekeeper before anyone opens it.
+
+`Tools/dmg.sh --adhoc` is the version with no certificate at all: it
+builds the same image, but macOS cannot say who made it, so the first
+launch is blocked. That is what the current release is.
+
 ## Tests
 
 ```bash

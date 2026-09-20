@@ -66,26 +66,48 @@ stating plainly.
 ## Install
 
 Download the latest `Kivo.dmg` from
-[Releases](https://github.com/NickCEllis/kivo/releases), open it, and drag
+[Releases](https://github.com/nickcellis/kivo/releases), open it, and drag
 Kivo to the Applications folder beside it.
 
-It runs on **macOS 14 Sonoma or later**, on both Apple Silicon and Intel
-Macs — the binary is universal.
+Requires **macOS 14 Sonoma or later**, on Apple Silicon or Intel — the
+binary is universal.
 
-The first launch is blocked, because the app carries no distribution
-certificate: it is signed ad-hoc, which means macOS can confirm nobody has
-tampered with it but cannot say who made it. macOS will say it cannot verify
-the developer. To open it anyway: **System Settings → Privacy & Security**,
-scroll to the message about Kivo, press **Open Anyway**, then confirm. On
-macOS 14 you can instead right-click the app and choose Open.
+### macOS will block the first launch. Here is how to open it
 
-Kivo then asks for **Full Disk Access**, which it needs to measure folders
-macOS protects, and which no app can grant itself: **System Settings →
-Privacy & Security → Full Disk Access**, then add Kivo. Without it Kivo
-still runs, and says which figures are incomplete.
+Kivo is signed ad-hoc: macOS can confirm nobody has tampered with the app,
+but it cannot say who made it, because that needs a Developer ID
+certificate and a paid Apple membership this project doesn't have. So the
+first double-click shows:
 
-If you would rather not run a build you did not make, build it yourself —
-it takes one command.
+> **"Apple could not verify 'Kivo' is free of malware and may harm your
+> Mac."**
+
+That wording is alarming and it isn't evidence of anything — macOS says
+the same about every app from outside the App Store without a paid
+certificate behind it. To open it:
+
+1. Double-click Kivo and dismiss the warning. This is what puts the
+   message into Settings, so it has to happen first.
+2. Open **System Settings → Privacy & Security** and scroll down.
+3. Beside *"Kivo was blocked to protect your Mac"*, click **Open Anyway**.
+4. Authenticate, then click **Open** in the dialog that follows.
+
+Once per Mac, and never again for that copy. (On macOS 14 you can instead
+right-click the app and choose Open. Apple removed that shortcut in macOS
+15, which is why the route above is longer than you may remember.)
+
+**If you would rather not click past a malware warning**, which is a fair
+instinct for an app that then asks for Full Disk Access, build it from
+source instead — one command, and an app you build yourself shows no
+warning at all, because it was never downloaded. See
+[Build it yourself](#build-it-yourself).
+
+### Full Disk Access
+
+Kivo then asks for **Full Disk Access**, which it needs to measure the
+folders macOS protects, and which no app can grant itself: **System
+Settings → Privacy & Security → Full Disk Access**, then add Kivo. Without
+it Kivo still runs, and says which figures are incomplete.
 
 ## Build it yourself
 

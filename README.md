@@ -92,16 +92,20 @@ it takes one command.
 Requires Xcode 16 or later and macOS 14 or later.
 
 ```bash
-git clone https://github.com/NickCEllis/kivo.git
+git clone https://github.com/nickcellis/kivo.git
 cd kivo
-xcodebuild -scheme Kivo -configuration Release -derivedDataPath build build
+xcodebuild -scheme Kivo -configuration Release -derivedDataPath build DEVELOPMENT_TEAM="" build
 cp -R build/Build/Products/Release/Kivo.app /Applications/
 ```
 
 Or open `kivo.xcodeproj` and press ⌘R.
 
-Signing uses your own team, so set one in Xcode (Signing & Capabilities) the
-first time. The App Sandbox is deliberately off: a sandboxed process cannot
+`DEVELOPMENT_TEAM=""` clears the team stored in the project, which is not
+yours; Xcode then signs the build ad-hoc, which needs no Apple account of
+any kind. An app you built yourself carries no quarantine flag, so it
+opens with no warning and no trip through System Settings — which is the
+main reason this section exists. Set your own team in Xcode ▸ Signing &
+Capabilities if you'd rather sign it properly. The App Sandbox is deliberately off: a sandboxed process cannot
 read `~/Library/Caches`, `~/.Trash` or `/Applications`, so every figure Kivo
 shows would be zero.
 

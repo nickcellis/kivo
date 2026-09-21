@@ -8,9 +8,9 @@ everything it takes somewhere you can get it back from.
 
 ## What it does
 
-**Clean** measures the folders a Mac rebuilds by itself — caches, logs, the
-Trash, Xcode's derived data, npm and pnpm stores, simulator devices, Docker's
-data — and sorts them into what is safe to remove, what comes back at the
+**Clean** measures the folders a Mac rebuilds by itself: caches, logs, the
+Trash, Xcode's derived data, npm and pnpm stores, simulator devices and
+Docker's data. It sorts them into what is safe to remove, what comes back at the
 cost of a download, and what Kivo will not touch. Downloads is measured and
 left alone. Docker and the simulators are shown with the command that
 reclaims them properly, because deleting those folders by hand confuses the
@@ -69,7 +69,7 @@ Download the latest `Kivo.dmg` from
 [Releases](https://github.com/nickcellis/kivo/releases), open it, and drag
 Kivo to the Applications folder beside it.
 
-Requires **macOS 14 Sonoma or later**, on Apple Silicon or Intel — the
+Requires **macOS 14 Sonoma or later**, on Apple Silicon or Intel. The
 binary is universal.
 
 ### macOS will block the first launch. Here is how to open it
@@ -82,7 +82,7 @@ first double-click shows:
 > **"Apple could not verify 'Kivo' is free of malware and may harm your
 > Mac."**
 
-That wording is alarming and it isn't evidence of anything — macOS says
+That wording is alarming, and it isn't evidence of anything. macOS says
 the same about every app from outside the App Store without a paid
 certificate behind it. To open it:
 
@@ -98,8 +98,8 @@ right-click the app and choose Open. Apple removed that shortcut in macOS
 
 **If you would rather not click past a malware warning**, which is a fair
 instinct for an app that then asks for Full Disk Access, build it from
-source instead — one command, and an app you build yourself shows no
-warning at all, because it was never downloaded. See
+source instead. It takes one command, and an app you build yourself shows
+no warning at all, because it was never downloaded. See
 [Build it yourself](#build-it-yourself).
 
 ### Full Disk Access
@@ -125,7 +125,7 @@ Or open `kivo.xcodeproj` and press ⌘R.
 `DEVELOPMENT_TEAM=""` clears the team stored in the project, which is not
 yours; Xcode then signs the build ad-hoc, which needs no Apple account of
 any kind. An app you built yourself carries no quarantine flag, so it
-opens with no warning and no trip through System Settings — which is the
+opens with no warning and no trip through System Settings, which is the
 main reason this section exists. Set your own team in Xcode ▸ Signing &
 Capabilities if you'd rather sign it properly. The App Sandbox is deliberately off: a sandboxed process cannot
 read `~/Library/Caches`, `~/.Trash` or `/Applications`, so every figure Kivo
@@ -155,22 +155,22 @@ launch is blocked. That is what the current release is.
 xcodebuild test -scheme Kivo -destination 'platform=macOS'
 ```
 
-They run against temporary directories, never your real home folder — every
+They run against temporary directories, never your real home folder. Every
 piece of code that touches the file system takes the home folder as a
 parameter, which is the fix for an early version that cleaned the author's
 actual caches while under test.
 
 ## How it is put together
 
-- `kivo/Core` — everything that measures or moves a file, with no SwiftUI in
-  it. `SystemScanner`, `SystemCleaner`, `OrphanFinder`, `DuplicateFinder`,
+- `kivo/Core` holds everything that measures or moves a file, with no
+  SwiftUI in it. `SystemScanner`, `SystemCleaner`, `OrphanFinder`, `DuplicateFinder`,
   `AppUninstaller`, `Quarantine`, `TreemapLayout`, and `ScanStore`, the one
   observable object the interface reads.
-- `kivo/UI` — the window, the pages and the review sheets. `KivoTheme` holds
-  every colour, size and font in the app.
-- `kivoTests` — Swift Testing, mostly about the rules above.
-- `Tools` — `render-icon.sh` draws the app icon from code, `shoot.sh`
-  refreshes the screenshots in this README.
+- `kivo/UI` has the window, the pages and the review sheets. `KivoTheme`
+  holds every colour, size and font in the app.
+- `kivoTests` is Swift Testing, mostly about the rules above.
+- `Tools` holds the scripts: `render-icon.sh` draws the app icon from code,
+  `shoot.sh` refreshes the screenshots in this README.
 
 The screenshots are taken from invented data (`DemoData.swift`, Debug only),
 not from anybody's real disk.

@@ -236,11 +236,11 @@ struct QuarantineView: View {
                     .frame(width: 64, alignment: .trailing)
             }
 
-            KivoQuietButton(title: "Put Back") {
+            KivoRowButton(title: "Put Back") {
                 error = store.restore(entry)
             }
 
-            KivoQuietButton(title: "Delete", isDestructive: true) {
+            KivoRowButton(title: "Delete", isDestructive: true) {
                 store.purge(entry)
             }
 

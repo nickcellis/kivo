@@ -131,13 +131,22 @@ struct KivoSecondaryButton: View {
 
 struct KivoBorderedButtonStyle: ButtonStyle {
 
+    /// Red for the ones that destroy something, accent for the rest.
+    var tint: Color = .kivoAccent
+
+    /// Shorter and tighter, for a button that sits in a table row rather
+    /// than under a card.
+    var compact: Bool = false
+
     func makeBody(configuration: Configuration) -> some View {
-        StyleBody(configuration: configuration)
+        StyleBody(configuration: configuration, tint: tint, compact: compact)
     }
 
     private struct StyleBody: View {
 
         let configuration: Configuration
+        let tint: Color
+        let compact: Bool
 
         @State private var isHovering = false
 
@@ -151,20 +160,20 @@ struct KivoBorderedButtonStyle: ButtonStyle {
         var body: some View {
 
             configuration.label
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Color.kivoAccent)
-                .padding(.horizontal, 14)
-                .frame(height: 28)
+                .font(.system(size: compact ? 11 : 12, weight: .semibold))
+                .foregroundStyle(tint)
+                .padding(.horizontal, compact ? 10 : 14)
+                .frame(height: compact ? 22 : 28)
                 .background {
                     shape.fill(
-                        Color.kivoAccent.opacity(
+                        tint.opacity(
                             configuration.isPressed ? 0.16 : (isHovering ? 0.08 : 0)
                         )
                     )
                 }
                 .overlay {
                     shape.strokeBorder(
-                        Color.kivoAccent.opacity(isHovering ? 0.75 : 0.45),
+                        tint.opacity(isHovering ? 0.75 : 0.45),
                         lineWidth: 1
                     )
                 }
@@ -172,6 +181,32 @@ struct KivoBorderedButtonStyle: ButtonStyle {
                 .onHover { isHovering = $0 }
                 .kivoPointerCursor()
         }
+    }
+}
+
+/// A bordered button sized for a table row.
+///
+/// The row actions used to be plain tinted text, which on a list of a
+/// hundred and seventy rows reads as a label rather than something you
+/// can press. A border is what says "button" before anybody hovers.
+struct KivoRowButton: View {
+
+    let title: String
+    var isDestructive: Bool = false
+    var action: () -> Void = {}
+
+    var body: some View {
+
+        Button(title, action: action)
+            .buttonStyle(
+                KivoBorderedButtonStyle(
+                    tint: isDestructive ? .kivoRisk : .kivoAccent,
+                    compact: true
+                )
+            )
+            .help(isDestructive
+                ? "Delete this for good. It cannot be undone."
+                : "Put this back where it came from")
     }
 }
 

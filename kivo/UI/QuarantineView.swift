@@ -11,6 +11,12 @@ struct QuarantineView: View {
 
     var body: some View {
 
+        // The header and the summary stay put; only the list scrolls.
+        // Without a scroll view at all — which is how this shipped — a
+        // hundred and seventy held items rendered as eight thousand
+        // points of column in a seven hundred point window, pushing the
+        // title, the total and "Delete All for Good" off the top of the
+        // screen with no way to reach them.
         VStack(spacing: KivoMetrics.sectionSpacing) {
 
             header
@@ -80,9 +86,9 @@ struct QuarantineView: View {
                 }
             }
 
-            table
-
-            Spacer(minLength: 0)
+            ScrollView {
+                table
+            }
         }
         .padding(KivoMetrics.pagePadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -114,18 +120,27 @@ struct QuarantineView: View {
 
     private var header: some View {
 
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        // Title above, subtitle under it, the same shape every other page
+        // uses. This one ran them along a single baseline, which put the
+        // explanation at 11.5pt beside a 34pt heading and read as a
+        // caption that had slid out of place.
+        HStack(alignment: .lastTextBaseline, spacing: 12) {
 
-            Text("Removed Items")
-                .font(KivoFont.pageTitle)
-                .foregroundStyle(Color.kivoText)
+            VStack(alignment: .leading, spacing: 3) {
 
-            Text("Nothing here is deleted. Put it back, or delete it for good.")
-                .font(KivoFont.caption)
-                .foregroundStyle(Color.kivoDim)
+                Text("Removed Items")
+                    .font(KivoFont.pageTitle)
+                    .foregroundStyle(Color.kivoText)
+
+                Text("Nothing here is deleted. Put it back, or delete it for good.")
+                    .font(KivoFont.body)
+                    .foregroundStyle(Color.kivoDim)
+                    .lineLimit(1)
+            }
 
             Spacer(minLength: 12)
         }
+        .padding(.bottom, 4)
         .accessibilityAddTraits(.isHeader)
     }
 
@@ -133,7 +148,7 @@ struct QuarantineView: View {
 
         KivoCard(padding: 0) {
 
-            VStack(spacing: 0) {
+            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
 
                 HStack(spacing: 8) {
 
@@ -191,8 +206,17 @@ struct QuarantineView: View {
                         .font(KivoFont.body)
                         .foregroundStyle(Color.kivoText)
                         .lineLimit(1)
+                        .truncationMode(.middle)
 
-                    KivoStatusPill(text: entry.label, tint: .kivoDim)
+                    // Only when it says something the name doesn't. A row
+                    // reading "com.grammarly.ProjectLlama.plist" beside a
+                    // pill reading COM.GRAMMARLY.PROJECTLLAMA is the same
+                    // string twice, and the pill was the half that got
+                    // truncated.
+                    if !entry.name.hasPrefix(entry.label) {
+                        KivoStatusPill(text: entry.label, tint: .kivoDim)
+                            .fixedSize()
+                    }
                 }
 
                 Text(entry.shortPath)
@@ -208,7 +232,8 @@ struct QuarantineView: View {
                 Text(days == 0 ? "due" : "\(days)d left")
                     .font(KivoFont.mono)
                     .foregroundStyle(days <= 3 ? Color.kivoWarn : Color.kivoDim)
-                    .frame(width: 52, alignment: .trailing)
+                    .lineLimit(1)
+                    .frame(width: 64, alignment: .trailing)
             }
 
             KivoQuietButton(title: "Put Back") {

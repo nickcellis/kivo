@@ -46,22 +46,25 @@ to put any of it back where it came from.
 A cleaner is a program that deletes your files, so the rules are worth
 stating plainly.
 
-- **Nothing is deleted outright.** Removals go to the Trash or to Kivo's own
-  holding area, and anything held can be restored to its exact original
-  path. Permanent deletion is a separate, deliberate action.
-- **Nothing is guessed at and then swept.** The Leftovers list arrives with
-  nothing ticked, because Kivo is inferring which app a folder belonged to
-  and a wrong inference is Kivo's mistake, not yours.
-- **Only reverse-DNS folder names are candidates.** "Google" and "MobileSync"
-  are skipped: there is no honest way to decide who owns them. Apple's own
-  identifiers are never candidates at all.
-- **An installed app protects its files**, including the helpers, widgets,
-  extensions and group containers named after it, and including apps that
-  live in a folder inside /Applications or are running from somewhere else
-  entirely.
-- **Every path is checked before removal** against a guard that refuses
-  anything outside the home folder's known locations.
-- **The rules have tests.** The suite is mostly about what Kivo must not do.
+Nothing is deleted outright. Removals go to the Trash or to Kivo's own
+holding area, and anything held can be restored to the exact path it came
+from. Deleting something permanently is a separate decision you make later,
+on a page built for making it.
+
+Nothing is guessed at and then swept. The Leftovers list arrives with
+nothing ticked, because there Kivo is inferring which app a folder belonged
+to, and a wrong inference is Kivo's mistake rather than yours. Only folders
+named in reverse DNS are even considered, so "Google" and "MobileSync" are
+skipped: there is no honest way to decide who owns them. Apple's own
+identifiers are never candidates at all.
+
+An installed app protects its files, and that includes the helpers, widgets,
+extensions and group containers named after it, apps that live in a folder
+inside /Applications, and apps running from somewhere else entirely. Every
+path is checked once more before anything moves, against a guard that
+refuses anything outside the home folder's known locations.
+
+All of this has tests, and the suite is mostly about what Kivo must not do.
 
 ## Install
 
